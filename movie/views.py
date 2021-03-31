@@ -282,7 +282,37 @@ def movieListAll(request):
     
     return returnList(return_data)
 
-def shareMovie(uid,movie_info):
+def shareMovie(request,wid):
+    uid = request.session.get('uid',None)
+    if not uid:
+        return return403('未登录或登录超时')
+    work_obj = Work.objects.filter(uid = uid,work_id=wid).first()
+    if not work_obj:
+        return return403('找不到作业集')
+    if work_obj.status!=200:
+        return return403('成功生成的影集才可分享')
+    title = work_obj.movie_title
+    text =  work_obj.movie_description
+    cover = work_obj.movie_cover
+    movie_info={
+        'work_id': work_obj.work_id,
+        'movie_title' : work_obj.movie_title,
+        'movie_description' : work_obj.movie_description,
+        'movie_cover' : work_obj.movie_cover,
+        'create_time' : work_obj.create_time.strftime('%Y-%m-%d %H:%M:%S'),
+        'update_time' : work_obj.update_time.strftime('%Y-%m-%d %H:%M:%S'),
+        'status' : work_obj.status,
+        'status_msg' : work_obj.status_msg,
+        'result_msg' : work_obj.result_msg,
+    }
+    post_type = 2
+    uid_obj=User.objects.filter(uid=uid).first()
+    movie_info_str = json.dumps(movie_info)
+    post_obj=Post(uid=uid_obj,title=title,post_type=post_type,text=text,time=datetime.now(),cover=cover,reference=movie_info_str)
+    post_obj.save()
+    return return200("分享成功")
+
+def shareFunc(uid,movie_info):
     title = movie_info["movie_title"]
     text =  movie_info["movie_description"]
     cover = movie_info["movie_cover"]

@@ -9,7 +9,7 @@ class Post(models.Model):
     post_type = models.SmallIntegerField(verbose_name='类型',null=True)
     cover = models.TextField(verbose_name='封面',null=True)
     text = models.TextField(verbose_name='正文')
-    reference = models.TextField(verbose_name='引用',null=True)
+    reference = models.TextField(verbose_name='引用',default='\{\}')
     time = models.DateTimeField(verbose_name='时间',default=timezone.now)
     like_num = models.IntegerField(verbose_name='赞数',default=0)
     class Meta:

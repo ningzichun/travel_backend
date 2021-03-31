@@ -29,11 +29,12 @@ def index(request):
             'text' : i.text,
             'type' : i.post_type,
             'cover' : i.cover,
-            'reference' : i.reference,
+            'reference' : json.loads(i.reference),
             'time' : i.time.strftime("%Y-%m-%d %H:%M:%S"),
             'like_num' : i.like_num,
         })
 
+    print(return_data)
     return returnList(return_data)
 
 def getPost(request,pid):
@@ -56,7 +57,7 @@ def getPost(request,pid):
         'text' : post_obj.text,
         'type' : post_obj.post_type,
         'cover' : post_obj.cover,
-        'reference' : post_obj.reference,
+        'reference' : json.loads(post_obj.reference),
         'time' : post_obj.time.strftime("%Y-%m-%d %H:%M:%S"),
         'like_num' : post_obj.like_num,
         'comment_num' : comments.count(),
@@ -97,7 +98,7 @@ def getPage(request,page_num):
             'title' : i.title,
             'type' : i.post_type,
             'cover' : i.cover,
-            'reference' : i.reference,
+            'reference' : json.loads(i.reference),
             'text' : i.text[:50],
             'time' : i.time.strftime("%Y-%m-%d %H:%M:%S"),
             'like_num' : i.like_num,

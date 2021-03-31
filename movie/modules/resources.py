@@ -8,7 +8,7 @@ from random import randint
 
 screensize = (1920, 1080)
 crossTime = 1
-res_path = "./travel/resources/assets/"
+res_path = "./movie/modules/assets/"
 tmp_path = "./tmp/"
 default_font = res_path+"zhenghei.ttf"
 default_image = res_path+"default.jpg"

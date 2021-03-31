@@ -93,21 +93,21 @@ def makeMovie(wid,uid):
         work_obj.save()
 
         # 分享影集
-        from movie.views import shareMovie
+        from movie.views import shareFunc
         if 'share' in load_dict:
             if load_dict['share']:
                 movie_info = {
-                    'work_id': i.work_id,
-                    'movie_title' : i.movie_title,
-                    'movie_description' : i.movie_description,
-                    'movie_cover' : i.movie_cover,
-                    'create_time' : i.create_time.strftime('%Y-%m-%d %H:%M:%S'),
-                    'update_time' : i.update_time.strftime('%Y-%m-%d %H:%M:%S'),
-                    'status' : i.status,
-                    'status_msg' : i.status_msg,
-                    'result_msg' : i.result_msg,
+                    'work_id': work_obj.work_id,
+                    'movie_title' : work_obj.movie_title,
+                    'movie_description' : work_obj.movie_description,
+                    'movie_cover' : work_obj.movie_cover,
+                    'create_time' : work_obj.create_time.strftime('%Y-%m-%d %H:%M:%S'),
+                    'update_time' : work_obj.update_time.strftime('%Y-%m-%d %H:%M:%S'),
+                    'status' : work_obj.status,
+                    'status_msg' : work_obj.status_msg,
+                    'result_msg' : work_obj.result_msg,
                 }
-                shareMovie(uid,movie_info)
+                shareFunc(uid,movie_info)
         print("Finish.")
     except Exception as e:
         print(traceback.format_exc(e))

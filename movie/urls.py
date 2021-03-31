@@ -10,6 +10,7 @@ urlpatterns = [
     path('<int:wid>/status', views.getStatus),
     path('<int:wid>/download', views.getMovie),
     path('<int:wid>/delete', views.deleteMovie),
+    path('<int:wid>/share', views.shareMovie),
     path('list', views.movieList),
     path('all', views.movieListAll),
 ]

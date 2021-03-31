@@ -15,8 +15,8 @@ import copy
 from .resources import default_font,default_image,default_music
 from .templates import total_photo_template
 
-pt="./travel/resources/assets/" #资源文件目录
-xls_file= r"./travel/resources/assets/info.xls" #xls文件
+pt="./movie/modules/assets/" #资源文件目录
+xls_file= r"./movie/modules/assets/info.xls" #xls文件
 
 #加载图片类
 class picture:
