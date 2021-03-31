@@ -13,7 +13,7 @@ from travel.resources.cn_dict import cn_dict
 
 
 @shared_task
-def makeMovie(wid):
+def makeMovie(wid,uid):
     #default_retry_delay=300, max_retries=5
     str_wid = str(wid)
     work_dir = "./media/movies/"+str(wid)
@@ -37,7 +37,7 @@ def makeMovie(wid):
         work_obj.status = 102
         work_obj.status_msg = "正在分析图片"
         work_obj.save()
-        from travel.modules.Movie.info import getInfo
+        from movie.modules.info import getInfo
 
         weather_specises = ['云', '雨', '雪', '晴']
         weather,color = getInfo(image_paths)
@@ -68,7 +68,7 @@ def makeMovie(wid):
         work_obj.status = 104
         work_obj.status_msg = "正在匹配模板"
         work_obj.save()
-        from travel.modules.Movie.genetic import FromHere
+        from movie.modules.genetic import FromHere
         command = FromHere(img_num,image_paths,weather,color,load_dict,res_poem)
 
         # 组装命令
@@ -81,7 +81,7 @@ def makeMovie(wid):
         work_obj.status = 105
         work_obj.status_msg = "正在生成影集"
         work_obj.save()
-        from travel.modules.Movie.generate import generateMovie
+        from movie.modules.generate import generateMovie
         generateMovie(command)
         
         
@@ -91,6 +91,23 @@ def makeMovie(wid):
         work_obj.result_msg = "/media/movies/"+str(wid)+vid_name
         work_obj.movie_cover = "/media/movies/"+str(wid)+cov_name
         work_obj.save()
+
+        # 分享影集
+        from movie.views import shareMovie
+        if 'share' in load_dict:
+            if load_dict['share']:
+                movie_info = {
+                    'work_id': i.work_id,
+                    'movie_title' : i.movie_title,
+                    'movie_description' : i.movie_description,
+                    'movie_cover' : i.movie_cover,
+                    'create_time' : i.create_time.strftime('%Y-%m-%d %H:%M:%S'),
+                    'update_time' : i.update_time.strftime('%Y-%m-%d %H:%M:%S'),
+                    'status' : i.status,
+                    'status_msg' : i.status_msg,
+                    'result_msg' : i.result_msg,
+                }
+                shareMovie(uid,movie_info)
         print("Finish.")
     except Exception as e:
         print(traceback.format_exc(e))

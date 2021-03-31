@@ -132,7 +132,7 @@ def startWork(request,wid): #开始生成影集
         return return403(hasMissingInfo)
     work_obj.status = 100
     work_obj.status_msg = ret_desc
-    newTask = tasks.makeMovie.delay(wid)
+    newTask = tasks.makeMovie.delay(wid,uid)
     work_obj.result_msg = newTask.task_id
     work_obj.save()
     return return200(ret_msg)
@@ -231,7 +231,7 @@ def movieList(request):
     uid = request.session.get('uid',None)
     if not uid:
         return return403('未登录或登录超时')
-    work_obj = Work.objects.filter(uid = uid,status__gte=0)
+    work_obj = Work.objects.filter(uid = uid,status__gt=0)
 
     return_data = {
         'uid' : uid,
@@ -281,3 +281,13 @@ def movieListAll(request):
         })
     
     return returnList(return_data)
+
+def shareMovie(uid,movie_info):
+    title = movie_info["movie_title"]
+    text =  movie_info["movie_description"]
+    cover = movie_info["movie_cover"]
+    post_type = 2
+    uid_obj=User.objects.filter(uid=uid).first()
+    movie_info_str = json.dumps(movie_info)
+    post_obj=Post(uid=uid_obj,title=title,post_type=post_type,text=text,time=datetime.now(),cover=cover,reference=movie_info_str)
+    post_obj.save()
