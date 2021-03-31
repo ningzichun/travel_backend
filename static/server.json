@@ -1,0 +1,16 @@
+{
+	"code": 200,
+	"msg": "文件服务器信息",
+	"data": {
+		"server" : [
+			{
+				"name" : "gz",
+				"address" : "https://gz.file.mrning.com/",
+			},
+			{
+				"name" : "ca",
+				"address" : "https://ca.file.mrning.com/",
+			}
+		]
+	}
+}

@@ -1,0 +1,6 @@
+
+*.pyc
+migrations
+log.txt
+celery.txt
+/tmp
