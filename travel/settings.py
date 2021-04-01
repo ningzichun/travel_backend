@@ -88,6 +88,7 @@ DATABASES = {
         'USER' : 'travel',
         'PASSWORD' : 'mima123',
         'CONN_MAX_AGE': 1200,
+        'OPTIONS': {'charset':'utf8mb4'},
     }
 }
 
