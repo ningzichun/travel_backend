@@ -12,11 +12,11 @@ import functools
 from . import generate
 import copy
 
-from .resources import default_font,default_image,default_music
+from .filelist import *
 from .templates import total_photo_template
 
-pt="./movie/modules/assets/" #资源文件目录
-xls_file= r"./movie/modules/assets/info.xls" #xls文件
+pt="./movie/modules/assets/gifs/" #资源文件目录
+xls_file= r"./movie/modules/assets/gifs/info.xls" #xls文件
 
 #加载图片类
 class picture:
@@ -364,12 +364,12 @@ def FromHere(img_num,path,weather,color,load_dict,res_poem):
         'id' : 0,
         'title' : load_dict["title"],
         'desc' : load_dict["description"],
-        'bg_image' : default_image
+        'bg_image' : randImage()
     }
     ending = {
         'id' :0,
         'text' : 'END',
-        'bg_image' : default_image
+        'bg_image' : randImage()
     }
     middle = {
         'num' : len(kiss.template) ,  #模板数目
@@ -381,7 +381,7 @@ def FromHere(img_num,path,weather,color,load_dict,res_poem):
     for i in range(len(kiss.template)):
         template = {   #模板
             'id' : kiss.template[i],
-            'bg_image' : default_image,
+            'bg_image' : randImage(),
             'images' : path[img_cnt:],
             'gif_num' : kiss.gif_num[i],
             'gifs' : []
@@ -403,7 +403,7 @@ def FromHere(img_num,path,weather,color,load_dict,res_poem):
         'templates' : [
             {
                 'id' : 0,
-                'bg_image' : default_image,
+                'bg_image' : randImage(),
                 'images' : path,
                 'poem' : res_poem
             }
@@ -414,7 +414,7 @@ def FromHere(img_num,path,weather,color,load_dict,res_poem):
         'openning': openning,
         'middle': middle,
         'ending': ending,
-        'music': default_music,
+        'music': randMusic(),
         'poem' : poem,
         'location': './demo.mp4',
         'fps': 5

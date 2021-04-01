@@ -120,11 +120,3 @@ def generateMovie1(Incommand):
     command = Incommand
     multithread_write_videofile('multi.mp4',generateCompose,moviepy_threads=5,ffmpeg_threads=1,fps=5)
 
-if __name__=="__main__":    #测试入口
-    comm  = {
-        "id" : 0 ,
-        "images": [default_image],
-        "bg_image" : default_image,
-        "poem" : "层楼倚高阁\n走马拥江东\n欲问升平日\n交交第二功"
-    }
-    genClipByCommand(3,comm)

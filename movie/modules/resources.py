@@ -5,15 +5,10 @@ from moviepy.video.tools.segmenting import findObjects
 import numpy as np
 import time
 from random import randint
+from .filelist import *
 
 screensize = (1920, 1080)
 crossTime = 1
-res_path = "./movie/modules/assets/"
-tmp_path = "./tmp/"
-default_font = res_path+"zhenghei.ttf"
-default_image = res_path+"default.jpg"
-default_music = res_path+"Journey.mp3"
-default_poem_font = res_path+"STXINWEI.TTF"
 
 #circle_mask = VideoFileClip('./res/circle_open_center.mov',has_mask=True).to_mask()
 
