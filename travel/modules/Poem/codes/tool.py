@@ -1,15 +1,3 @@
-# -*- coding: utf-8 -*-
-# @Author: Xiaoyuan Yi
-# @Last Modified by:   Xiaoyuan Yi
-# @Last Modified time: 2020-03-31 22:40:26
-# @Email: yi-xy16@mails.tsinghua.edu.cn
-# @Description:
-'''
-Copyright 2019 THUNLP Lab. All Rights Reserved.
-This code is part of the online Chinese poetry generation system, Jiuge.
-System URL: https://jiuge.thunlp.cn/.
-Github: https://github.com/THUNLP-AIPoet.
-'''
 import pickle
 import numpy as np
 import random
@@ -24,8 +12,6 @@ def readPickle(data_path):
 
     return corpus
 
-#-------------------------------------------------------------------------
-#-------------------------------------------------------------------------
 class Tool(object):
     '''
     a tool to hold training data and the vocabulary
@@ -136,7 +122,6 @@ class Tool(object):
         return self.__UNK_ID
 
 
-    # ----------------------------------------------------------------
     def load_dic(self, vocab_path, ivocab_path):
         dic = readPickle(vocab_path)
         idic = readPickle(ivocab_path)

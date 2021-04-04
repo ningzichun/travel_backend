@@ -2,7 +2,7 @@
 #遗传算法，为最后一层生成参数
 #输出：
 #第一个参数这个影集照片数量，第二个参数是一个数组 第i项代表第i张图片的gif数量，第三个参数是一个数组，第i项是第i个gif 的id（现在是地址），(第四个参数是规定尺寸
-# 第五个参数是规定位置，这个可以根据id一起取？最后再说吧，不行就三个参数是地址 尺寸位置)最后一个参数是音乐的卡点时间
+# 第五个参数是规定位置
 
 #输入数据格式：
 import random
@@ -222,28 +222,6 @@ def Gene_breed(sequence_a,sequence_b):
     k=0
     for i in range(0,len(new_breed.gif_num)):
        k=k+new_breed.gif_num[i]
-    # if len(new_breed.path)!=k:
-    #     print("wrong!!!!!!")
-    #
-    #     print(sequence_a.gif_num[0:point_a])
-    #     print(sequence_b.gif_num[point_a:point_b])
-    #     print(sequence_a.gif_num[point_b:the_number1])
-    #
-    #     print(number_a_a)
-    #     print(number_b_b)
-    #     print(sequence_a.path[0:number_a_a[point_a - 1]])
-    #     print(sequence_b.path[number_b_b[point_a - 1]:number_b_b[point_b - 1]])
-    #     print(sequence_a.path[number_a_a[point_b - 1]:number_a_a[the_number - 1]])
-    #
-    #
-    #     print(point_b)
-    #     print(point_a)
-    #     print(sequence_b.gif_num)
-    #     print(sequence_a.gif_num)
-    #     print(new_breed.gif_num)
-    #
-    #     print(new_breed.path)
-    #     print("..........................")
     return new_breed
 
 
@@ -259,12 +237,6 @@ def gene_gif_main(path_1,path_2,number,pathhh,weatherrr,colorrr):
 
     print("kais")
     #加载图片数据 ##等待文件格式
-    #pictures
-    ###正经程序写在这儿。。
-#    data_picture=xlrd.open_workbook(path_2)
-#    table_picture=data_picture.sheet_by_name("Sheet1")
-#    for i in range(1,number+1):
-#        _picture=picture()
 ##测试输入
     for i in range(0,number):
         pictures.append(picture(colorrr[i],[],weatherrr[i],pathhh[i]))
@@ -279,7 +251,6 @@ def gene_gif_main(path_1,path_2,number,pathhh,weatherrr,colorrr):
         factor=strs.split(';')
         
         #_paths=pt+str(table_gif.cell(i,0).value)+".gif"
-        #不知道为啥要取一次整数
         aka=round(table_gif.cell(i,0).value)
         _paths = pt + str(aka) + ".gif"
         #_paths=table_gif.cell(i,0).value
@@ -302,11 +273,7 @@ def gene_gif_main(path_1,path_2,number,pathhh,weatherrr,colorrr):
     deida_times=0
     while deida_times < ctrl_times:
 
-        #print("il")
-        #print(pre_gif)
         new_gif.clear()
-        #print("ki")
-        #print(pre_gif)
         for i in range(0,len(pre_gif)):
             pre_gif[i].scores=pre_gif[i].gif_fit()
 

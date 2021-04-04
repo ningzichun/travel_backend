@@ -115,7 +115,7 @@ def generateCompose():
     final_clip = final_clip.set_audio(audio_clip)
     return final_clip
 
-def generateMovie1(Incommand):
+def generateMovieMultithread(Incommand):
     global command 
     command = Incommand
     multithread_write_videofile('multi.mp4',generateCompose,moviepy_threads=5,ffmpeg_threads=1,fps=5)

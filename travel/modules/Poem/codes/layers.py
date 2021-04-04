@@ -1,15 +1,3 @@
-# -*- coding: utf-8 -*-
-# @Author: Xiaoyuan Yi
-# @Last Modified by:   Xiaoyuan Yi
-# @Last Modified time: 2020-03-31 22:11:42
-# @Email: yi-xy16@mails.tsinghua.edu.cn
-# @Description:
-'''
-Copyright 2019 THUNLP Lab. All Rights Reserved.
-This code is part of the online Chinese poetry generation system, Jiuge.
-System URL: https://jiuge.thunlp.cn/.
-Github: https://github.com/THUNLP-AIPoet.
-'''
 import math
 import numpy as np
 from collections import OrderedDict
@@ -487,8 +475,6 @@ class LossWrapper(object):
 
         return entropy_loss
 
-#-----------------------------------------------------------------
-#-----------------------------------------------------------------
 class ScheduledOptim(object):
     "Optim wrapper that implements rate."
     def __init__(self, optimizer, warmup_steps, max_lr=5e-4, min_lr=3e-5, beta=0.55):

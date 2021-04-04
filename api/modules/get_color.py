@@ -125,4 +125,4 @@ def getColor(imageFile,k=3):
 
     return(my_center)
 
-    #返回数据格式：  [[b,g,r],[b,g,r]...]  //k个三维向量 因为写反了所以顺序是 b g r
+    #返回数据格式：  [[b,g,r],[b,g,r]...]  //k个三维向量

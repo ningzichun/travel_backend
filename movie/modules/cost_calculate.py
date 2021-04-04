@@ -7,7 +7,7 @@ factor_weight=1
 weather_weight=1
 
 
-#主题色的计算,容易理解
+#主题色的计算
 def color(rgb_a,rgb_b):
     #print("rgb")
     #print(math.sqrt((rgb_a[0]-rgb_b[0])*(rgb_a[0]-rgb_b[0])+(rgb_a[1]-rgb_b[1])*(rgb_a[1]-rgb_b[1])+(rgb_a[2]-rgb_b[2])*(rgb_a[2]-rgb_b[2]))-20000)

@@ -1,15 +1,3 @@
-# -*- coding: utf-8 -*-
-# @Author: Xiaoyuan Yi
-# @Last Modified by:   Xiaoyuan Yi
-# @Last Modified time: 2020-03-19 16:36:04
-# @Email: yi-xy16@mails.tsinghua.edu.cn
-# @Description:
-'''
-Copyright 2019 THUNLP Lab. All Rights Reserved.
-This code is part of the online Chinese poetry generation system, Jiuge.
-System URL: https://jiuge.thunlp.cn/.
-Github: https://github.com/THUNLP-AIPoet.
-'''
 import numpy as np
 import random
 import torch
@@ -18,10 +6,6 @@ from .config import device
 
 
 class Hypothesis(object):
-    '''
-    a hypothesis which holds the generated tokens,
-        current state and beam score
-    '''
     def __init__(self, tokens, states, score):
         self.score = score
         self.states = states
@@ -175,13 +159,6 @@ class PoetryBeam(object):
             filter_ids = list(set(range(0, V)) - set(self.__rhyme_cids))
             costs[:, filter_ids] = filter_v
 
-
-        '''
-        filter out chars of the undesired tone
-        NOTE: since some Chinese characters may belong to both tones,
-            here we only consider the non-overlap ones
-        TODO: disambiguation
-        '''
         if position < self.__length and len(self.__rhythms) > 0:
             pos_rhythm = self.__rhythms[position]
             if pos_rhythm == 0:  # level tone

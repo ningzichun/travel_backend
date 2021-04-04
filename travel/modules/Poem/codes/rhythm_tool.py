@@ -1,12 +1,3 @@
-# -*- coding: utf-8 -*-
-# @Author: Ruoyu Li
-# @Description:
-'''
-Copyright 2019 THUNLP Lab. All Rights Reserved.
-This code is part of the online Chinese poetry generation system, Jiuge.
-System URL: https://jiuge.thunlp.cn/.
-Github: https://github.com/THUNLP-AIPoet.
-'''
 class RhythmRecognizer(object):
     """Get the rhythm id of a input line
     This tool can be applied to Chinese classical quatrains only

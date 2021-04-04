@@ -1,3 +1,8 @@
 from django.contrib import admin
 
-# Register your models here.
+from photo.models import Photo
+
+class PhotoAdmin(admin.ModelAdmin):
+    list_display = ('work_id','uid','status','photo_title','photo_description','create_time','update_time','status_msg','result_msg')
+ 
+admin.site.register(Photo,PhotoAdmin)

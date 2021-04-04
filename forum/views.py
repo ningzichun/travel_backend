@@ -1,14 +1,17 @@
 from django.shortcuts import render
+from user.models import User
 from forum.models import Post,Comment
 from django.core.serializers import serialize
 from travel.codes import return200,return403,returnList
 from django.utils import timezone
+from django.core.cache import cache
 from datetime import datetime
-from user.models import User
 import json
-# Create your views here.
 
-def index(request):
+def index(request): 
+    cached = cache.get('index')
+    if cached:
+        return returnList(cached)
 
     postNum=Post.objects.count()
     new_posts = Post.objects.order_by('-time')[:10]
@@ -34,10 +37,13 @@ def index(request):
             'like_num' : i.like_num,
         })
 
-    print(return_data)
+    cache.set('index', return_data, 30)
     return returnList(return_data)
 
 def getPost(request,pid):
+    cached = cache.get('post'+str(pid))
+    if cached:
+        return returnList(cached)
     post_obj = Post.objects.filter(post_id=pid).first()
 
     if not post_obj:
@@ -77,10 +83,13 @@ def getPost(request,pid):
             'like_num' : i.like_num,
         })
 
-
+    cache.set('post'+str(pid), return_data, 3600)
     return returnList(return_data)
 
 def getPage(request,page_num):
+    cached = cache.get('page'+str(page_num))
+    if cached:
+        return returnList(cached)
     page_obj = Post.objects.order_by('-time')[(page_num-1)*10:page_num*10] 
 
     return_data = {
@@ -104,6 +113,7 @@ def getPage(request,page_num):
             'like_num' : i.like_num,
         })
     
+    cache.set('page'+str(page_num), return_data, 30)
     return returnList(return_data)
 
 def newPost(request):
@@ -118,6 +128,8 @@ def newPost(request):
     uid_obj=User.objects.filter(uid=uid).first()
     post_obj=Post(uid=uid_obj,title=title,type=type,text=text,time=datetime.now())
     post_obj.save()
+    cache.expire('index', timeout=0)
+    cache.delete_pattern("page*")
     return return200('操作成功')
 
 def editPost(request,pid):
@@ -135,6 +147,8 @@ def editPost(request,pid):
     post_obj.title=title
     post_obj.text=text
     post_obj.save()
+
+    cache.expire('post'+str(pid), timeout=0)
     return return200('操作成功')
 
 
@@ -147,6 +161,7 @@ def deletePost(request,pid):
         return return403('找不到文章')
     
     post_obj.delete()
+    cache.expire('post'+str(pid), timeout=0)
     return return200('操作成功')
 
 
@@ -166,6 +181,7 @@ def likePost(request,pid):
     post_obj.save()
 
     request.session['p'+str(pid)] = 1
+    cache.expire('post'+str(pid), timeout=10)
     return return200('操作成功')
 
 def newComment(request):
@@ -182,6 +198,7 @@ def newComment(request):
         return return403('找不到文章')
     comment_obj = Comment(uid=uid_obj,post_id=pid_obj, text=text,time=timezone.now())
     comment_obj.save()
+    cache.expire('post'+str(pid), timeout=5)
     return return200('操作成功')
 
 def deleteComment(request,cid):
@@ -192,6 +209,7 @@ def deleteComment(request,cid):
     if not comment_obj:
         return return403('找不到评论')
     
+    cache.expire('post'+str(comment_obj.post_id.post_id), timeout=5)
     comment_obj.delete()
     return return200('操作成功')
 
@@ -212,4 +230,5 @@ def likeComment(request,cid):
     comment_obj.save()
 
     request.session['c'+str(cid)] = 1
+    cache.expire('post'+str(comment_obj.post_id.post_id), timeout=5)
     return return200('操作成功')

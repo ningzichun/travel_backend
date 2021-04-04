@@ -1,5 +1,10 @@
 from django.http import HttpResponse,HttpResponseForbidden
 import json
+import smtplib
+from email import encoders
+from email.header import Header
+from email.mime.text import MIMEText
+from email.utils import parseaddr, formataddr
 import logging
 logger = logging.getLogger('django')
 def return403(str):
@@ -23,10 +28,8 @@ def sendMail(target_addr,title,content):
     msg['From']=formataddr(["TravelLog",from_addr])
     msg['To']=formataddr(["User",target_addr]) 
     msg['Subject'] = Header(title, 'utf-8').encode()
-    #server = smtplib.SMTP(smtp_server, 25)
     #server.starttls()
     server=smtplib.SMTP_SSL(smtp_server, 465)
-    #server.set_debuglevel(1)
     try:
         server.login(from_addr, password)
         server.sendmail(from_addr, [target_addr], msg.as_string())

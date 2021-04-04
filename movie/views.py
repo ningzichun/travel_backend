@@ -8,13 +8,13 @@ from user.models import User
 from movie.models import Work
 from movie import tasks
 
+from django.core.cache import cache
 import celery
 import random
 import shutil
 import json
 import time
 import os
-# Create your views here.
 
 def index(request):
     context={'headers':request.headers}
@@ -38,7 +38,7 @@ def checkMissingInfo(wid,work_obj):  #检查完整性
     if not "title" in load_dict:
         return("info.json 中无 title")
     if not "description" in load_dict:
-        return("info.json 中无 status_msg")
+        return("info.json 中无 description")
     work_obj.movie_title = load_dict["title"]
     work_obj.movie_description = load_dict["description"]
     work_obj.save()
@@ -227,7 +227,7 @@ def deleteMovie(request,wid):
     return return200('删除成功')
 
 
-def movieList(request):
+def myMovieList(request):
     uid = request.session.get('uid',None)
     if not uid:
         return return403('未登录或登录超时')
@@ -255,7 +255,7 @@ def movieList(request):
     
     return returnList(return_data)
 
-def movieListAll(request):
+def myMovieListAll(request):
     uid = request.session.get('uid',None)
     if not uid:
         return return403('未登录或登录超时')
@@ -270,6 +270,31 @@ def movieListAll(request):
     for i in work_obj:
         return_data['movies'].append({
             'work_id': i.work_id,
+            'movie_title' : i.movie_title,
+            'movie_description' : i.movie_description,
+            'movie_cover' : i.movie_cover,
+            'create_time' : i.create_time.strftime('%Y-%m-%d %H:%M:%S'),
+            'update_time' : i.update_time.strftime('%Y-%m-%d %H:%M:%S'),
+            'status' : i.status,
+            'status_msg' : i.status_msg,
+            'result_msg' : i.result_msg,
+        })
+    
+    return returnList(return_data)
+
+def movieListAll(request):
+    work_obj = Work.objects.filter()
+
+    return_data = {
+        'movie_num' : work_obj.count(),
+        'movies' : []
+    }
+
+    for i in work_obj:
+        return_data['movies'].append({
+            'work_id': i.work_id,
+            'uid' : i.uid.uid,
+            'uname' : i.uid.uname,
             'movie_title' : i.movie_title,
             'movie_description' : i.movie_description,
             'movie_cover' : i.movie_cover,

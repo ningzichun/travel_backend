@@ -159,6 +159,59 @@ def getPoem(request):
             return_obj.append(result)
     return returnList(return_obj)
 
+def genPoemFromImg(request):
+    from travel.load_files import generatePoet
+    from travel.resources.cn_dict import cn_dict
+    types = request.POST.get("types")
+    values = request.POST.get("values")
+    image = request.FILES.get('image',None)
+    if not (types and values and image):
+        return return403('缺少types或values或image')
+    fac_name = types.split(",")
+    fac_rate = values.split(",")
+    length = request.POST.get("length")
+    if not length:
+        length = 5
+    length = int(length)
+    experience = request.POST.get("experience")
+    if not experience:
+        experience = 1
+    experience = int(experience)
+    history = request.POST.get("history")
+    if not history:
+        history = 0
+    history = int(history)
+
+    from travel.load_files import weather_model
+    tran1 = transforms.ToTensor()
+    tran2 = transforms.Normalize(mean=[0.5, 0.5, 0.5], std=[0.5, 0.5, 0.5])
+    img = Image.open(image).resize((96, 96)).convert('RGB')  # 取图片数据
+    img = tran2(tran1(img)).unsqueeze(0).to('cpu')
+    pred = weather_model(img)
+    pred = torch.softmax(pred,dim=1)
+    weather_specises = ['云', '雨', '雪', '晴']
+    weather_tag = torch.argmax(pred, dim=1)
+    rate_list = pred.detach().numpy().tolist()[0]
+    
+    keyword = weather_specises[weather_tag] + " " + cn_dict[fac_name[2]]
+    if(float(fac_rate[1])>0.1):
+        keyword = keyword+" "+cn_dict[fac_name[1]]
+    if(float(fac_rate[0])>0.1):
+        keyword = keyword+" "+cn_dict[fac_name[0]]
+    res_poem = ""
+    
+    for i in range(5):
+            result = generatePoet(keyword,length,experience,history)
+            if result:
+                res_poem = result
+                break
+    
+    return_obj = {
+        'poem' : res_poem,
+        'keywords' : keyword
+    }
+    return returnList(return_obj)
+
 
 def getTest(request):
     import synonyms as sy

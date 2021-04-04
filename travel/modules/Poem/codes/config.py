@@ -1,15 +1,3 @@
-# -*- coding: utf-8 -*-
-# @Author: Xiaoyuan Yi
-# @Last Modified by:   Xiaoyuan Yi
-# @Last Modified time: 2020-03-31 22:50:32
-# @Email: yi-xy16@mails.tsinghua.edu.cn
-# @Description:
-'''
-Copyright 2019 THUNLP Lab. All Rights Reserved.
-This code is part of the online Chinese poetry generation system, Jiuge.
-System URL: https://jiuge.thunlp.cn/.
-Github: https://github.com/THUNLP-AIPoet.
-'''
 from collections import namedtuple
 import torch
 HParams = namedtuple('HParams',

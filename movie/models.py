@@ -20,7 +20,7 @@ class Work(models.Model):
     movie_description = models.CharField(max_length=256,verbose_name='影集描述',null=True)
     movie_cover = models.CharField(max_length=256,verbose_name='封面图',null=True)
     class Meta:
-        verbose_name = '文章'
-        verbose_name_plural = '文章表'
+        verbose_name = '影集'
+        verbose_name_plural = '影集表'
     def __str__(self):
         return "%s: %s"% (self.post_id,self.title)
