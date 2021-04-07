@@ -8,6 +8,7 @@ font_path = res_path+"fonts/"
 images_path = res_path+"images/"
 music_path = res_path+"music/"
 masks_path = res_path+"masks/"
+templates_path = res_path+"templates/"
 
 title_font = ["CEYY.ttf","Seto.ttf","Xiyue.ttf","ZHUSHI.ttf"]
 poem_font = ["STXINGKA.TTF","STXINWEI.TTF"]

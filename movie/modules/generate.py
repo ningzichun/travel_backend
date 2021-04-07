@@ -95,7 +95,7 @@ def generateMovie(command):
     final_clip = concatenate(tmp_clips,padding=-1, method="compose")
     audio_clip = afx.audio_loop( music_clip, duration=final_clip.duration)
     final_clip = final_clip.set_audio(audio_clip)
-    final_clip.write_videofile(command['location'])
+    final_clip.write_videofile(command['location'],fps=command['fps'])
 
     #清理文件
     

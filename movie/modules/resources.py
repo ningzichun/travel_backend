@@ -91,6 +91,27 @@ def cut_to_cover(image_path):
     img_crop = img_crop.resize((1920, 1080)).filter(ImageFilter.GaussianBlur(2))
     return img_crop
 
+def cut_to_size(target_w,target_h,image_path):
+    img = Image.open(image_path).convert('RGB')
+    width, height = img.size
+    rate = target_w / target_h
+    # 先裁剪为16：9
+    if width / height > rate:  # 以长为基准
+        target_width = int(height / target_h * target_w)
+        start_width = int((width - target_width) / 2)
+        img_crop = img.crop((start_width, 0, start_width + target_width, height))  # 左上右下
+        print((1, target_width, height))
+    elif width / height < rate:  # 以宽为基准
+        target_height = int(width / target_w * target_h)
+        start_height = int((height - target_height) / 2)
+        img_crop = img.crop((0, start_height, width, start_height + target_height))  # 左上右下
+        print((2, width, target_height))
+    else:
+        img_crop = img
+    # 再调整大小，高斯模糊
+    img_crop = img_crop.resize((target_w, target_h))
+    return img_crop
+
 def generateCover(np_frame,path):
     img = Image.fromarray(np.uint8(np_frame)).convert('RGB')
     img = img.crop((320, 180, 1600, 900)) 

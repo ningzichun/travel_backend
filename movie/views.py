@@ -295,6 +295,7 @@ def movieListAll(request):
             'work_id': i.work_id,
             'uid' : i.uid.uid,
             'uname' : i.uid.uname,
+            'avatar' : '/media/'+i.uid.avatar.name,
             'movie_title' : i.movie_title,
             'movie_description' : i.movie_description,
             'movie_cover' : i.movie_cover,

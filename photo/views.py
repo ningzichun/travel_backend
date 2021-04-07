@@ -6,7 +6,7 @@ from django.utils import timezone
 from datetime import datetime
 from user.models import User
 from photo.models import Photo
-from photo import tasks
+import traceback
 import celery
 import random
 import shutil
@@ -106,16 +106,7 @@ def startPhoto(request,wid): #开始生成长图
     if work_obj.status == 200 :
         return return403("任务已完成")
     if work_obj.status > 0 :    # 已开始，检查状态
-        try:
-            task_obj = celery.result.AsyncResult(work_obj.result_msg) # 存在状态记录，无需重新运行
-            if task_obj.status=='FAILURE':
-                ret_desc = "排队等待中"
-                ret_msg = "原执行失败，在 FAILURE 队列，已重新加入等待队列"
-            else: 
-                return return403("已在 "+task_obj.state+" 队列中")
-        except Exception:   # 查询不到记录，重新执行
-            ret_desc = "排队等待中"
-            ret_msg = "已重新加入队列"
+        return return403("任务已启动")
     elif work_obj.status == -1:   # 前期执行失败
         ret_desc = "排队等待中"
         ret_msg = "原执行失败，已重新加入队列"
@@ -127,9 +118,9 @@ def startPhoto(request,wid): #开始生成长图
         return return403(hasMissingInfo)
     work_obj.status = 100
     work_obj.status_msg = ret_desc
-    newTask = tasks.makePhoto.delay(wid,uid)
-    work_obj.result_msg = newTask.task_id
+    work_obj.result_msg = ""
     work_obj.save()
+    makePhoto(wid,uid)
     return return200(ret_msg)
 
 def getStatus(request,wid): #获取当前状态
@@ -160,26 +151,16 @@ def getStatus(request,wid): #获取当前状态
 
         image_num = len(image_urls)
 
-    if (work_obj.status > 0) and (work_obj.status < 200) :  #已开始，非成功状态
-        try:
-            task_obj = celery.result.AsyncResult(work_obj.result_msg)
-        except Exception:   # 无任务ID
-            work_obj.status = -1
-            work_obj.status_msg = '找不到任务，请重新启动'
-            work_obj.save()
-        else:
-            if task_obj.status=='FAILURE':
-                work_obj.status = -1
-                work_obj.status_msg = '上次执行失败于：'+work_obj.status_msg
-                work_obj.save()
-            print(task_obj.state)
-            print(task_obj.result)
     return_data = {
         'work_id' : work_obj.work_id,
         'uid' : work_obj.uid.uid,
         'photo_title' : work_obj.photo_title,
         'photo_description' : work_obj.photo_description,
         'photo_cover' : work_obj.photo_cover,
+        'cover_width' : work_obj.cover_width,
+        'cover_height' : work_obj.cover_height,
+        'photo_width' : work_obj.photo_width,
+        'photo_height' : work_obj.photo_height,
         'create_time' : work_obj.create_time.strftime('%Y-%m-%d %H:%M:%S'),
         'update_time' : work_obj.update_time.strftime('%Y-%m-%d %H:%M:%S'),
         'status' : work_obj.status,
@@ -189,6 +170,93 @@ def getStatus(request,wid): #获取当前状态
         'image_urls' :image_urls
     }
     return returnList(return_data)
+
+
+def makePhoto(wid,uid):
+    str_wid = str(wid)
+    work_dir = "./media/photos/"+str(wid)
+    print(work_dir)
+    print(str_wid+": 开始生成")
+    work_obj = Photo.objects.filter(work_id = wid).first()
+    try:
+        work_obj.status = 101
+        work_obj.status_msg = "正在分析命令参数"
+        work_obj.save()
+
+        # 读取info 处理path 传递参数
+        with open( work_dir + "/info.json",'r') as load_f:
+            load_dict = json.load(load_f)
+        images_in_json = list(load_dict["images"])
+        image_paths = [ work_dir+"/"+i for i in images_in_json]
+        print(image_paths)
+        img_num = len(images_in_json)
+
+        # 图像识别
+        work_obj.status = 102
+        work_obj.status_msg = "正在分析图片"
+        work_obj.save()
+        from movie.modules.info import getInfo
+
+        weather,color = getInfo(image_paths)
+        
+        # 组装命令
+        res_name = "/photo"+randStr(4)+".png"
+        cov_name = "/cover"+randStr(4)+".jpg"
+
+        # 长图生成
+        work_obj.status = 105
+        work_obj.status_msg = "正在生成长图"
+        work_obj.save()
+        from photo.modules.genetic_for_longpic import generatePhoto
+        cover_width,cover_height,res_width,res_height = generatePhoto(img_num,image_paths,weather,color,work_dir+cov_name,work_dir+res_name)
+        
+        
+        work_obj.status = 200 #处理完成
+        work_obj.status_msg = "处理完成"
+        work_obj.result_msg = "/media/photos/"+str(wid)+res_name
+        work_obj.photo_cover = "/media/photos/"+str(wid)+cov_name
+        work_obj.cover_width = cover_width
+        work_obj.cover_height = cover_height
+        work_obj.photo_width = res_width
+        work_obj.photo_height = res_height
+
+        work_obj.save()
+
+        # 分享长图
+        from photo.views import shareFunc
+        if 'share' in load_dict:
+            if load_dict['share']:
+                photo_info = {
+                    'work_id': work_obj.work_id,
+                    'photo_title' : work_obj.photo_title,
+                    'photo_description' : work_obj.photo_description,
+                    'photo_cover' : work_obj.photo_cover,
+                    'create_time' : work_obj.create_time.strftime('%Y-%m-%d %H:%M:%S'),
+                    'update_time' : work_obj.update_time.strftime('%Y-%m-%d %H:%M:%S'),
+                    'status' : work_obj.status,
+                    'status_msg' : work_obj.status_msg,
+                    'result_msg' : work_obj.result_msg,
+                }
+                shareFunc(uid,photo_info)
+        print("Finish.")
+    except Exception as e:
+        print(traceback.format_exc(e))
+        work_obj.status = -1 #失败
+        work_obj.status_msg = "生成失败："+repr(e)
+        print(str_wid+": 生成失败")
+        work_obj.save()
+        return False
+
+    print(str_wid+": 结束生成")
+    return True
+
+def randStr(length = 4):
+    num_set = [chr(i) for i in range(48,58)]
+    char_set = [chr(i) for i in range(97,123)]
+    total_set = num_set + char_set
+    result_set = "".join(random.sample(total_set, length))
+    return result_set
+
 
 def deletePhoto(request,wid):
     uid = request.session.get('uid',None)
@@ -230,6 +298,10 @@ def myPhotoList(request):
             'photo_title' : i.photo_title,
             'photo_description' : i.photo_description,
             'photo_cover' : i.photo_cover,
+            'cover_width' : i.cover_width,
+            'cover_height' : i.cover_height,
+            'photo_width' : i.photo_width,
+            'photo_height' : i.photo_height,
             'create_time' : i.create_time.strftime('%Y-%m-%d %H:%M:%S'),
             'update_time' : i.update_time.strftime('%Y-%m-%d %H:%M:%S'),
             'status' : i.status,
@@ -257,6 +329,10 @@ def myPhotoListAll(request):
             'photo_title' : i.photo_title,
             'photo_description' : i.photo_description,
             'photo_cover' : i.photo_cover,
+            'cover_width' : i.cover_width,
+            'cover_height' : i.cover_height,
+            'photo_width' : i.photo_width,
+            'photo_height' : i.photo_height,
             'create_time' : i.create_time.strftime('%Y-%m-%d %H:%M:%S'),
             'update_time' : i.update_time.strftime('%Y-%m-%d %H:%M:%S'),
             'status' : i.status,
@@ -279,9 +355,14 @@ def photoListAll(request):
             'work_id': i.work_id,
             'uid' : i.uid.uid,
             'uname' : i.uid.uname,
+            'avatar' : '/media/'+i.uid.avatar.name,
             'photo_title' : i.photo_title,
             'photo_description' : i.photo_description,
             'photo_cover' : i.photo_cover,
+            'cover_width' : i.cover_width,
+            'cover_height' : i.cover_height,
+            'photo_width' : i.photo_width,
+            'photo_height' : i.photo_height,
             'create_time' : i.create_time.strftime('%Y-%m-%d %H:%M:%S'),
             'update_time' : i.update_time.strftime('%Y-%m-%d %H:%M:%S'),
             'status' : i.status,
@@ -330,3 +411,4 @@ def shareFunc(uid,photo_info):
     photo_info_str = json.dumps(photo_info)
     post_obj=Post(uid=uid_obj,title=title,post_type=post_type,text=text,time=datetime.now(),cover=cover,reference=photo_info_str)
     post_obj.save()
+

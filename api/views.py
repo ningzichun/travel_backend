@@ -4,12 +4,14 @@ from travel.codes import return200,return403,returnList
 from django.core.serializers import serialize
 from travel.modules.get_color import getColor
 from travel.modules.location import coordinate2address
+from api.modules.FSRCNN.fsrcnn import itFSRCNN
 import json
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
 from torchvision import datasets, transforms
 from PIL import Image
+import base64
 
 
 def index(request):
@@ -40,13 +42,21 @@ def FSRCNNFunc(request):
     image = request.FILES.get('image',None)
     if not image:
         return return403('未获取到image')
-    scale = request.POST.get("k")
+    scale = request.POST.get("scale")
     if scale :
         scale=int(scale)
+        if not (scale in [2,3,4]):
+            return return403('缩放倍数错误')
     else:
-        scale=4
-    itFSRCNN(image,scale)
-    return return200("1")
+        scale=3
+    opened_image = Image.open(image).convert('RGB')
+    opened_image.thumbnail((2160,2160))
+    res_img = itFSRCNN(opened_image,scale)
+    stream = BytesIO()
+    res_img.save(stream, 'JPEG')
+    base64_img = base64.b64encode(stream.getvalue()).decode()
+    return_data =  base64_img
+    return returnList(return_data)
 
 
 def weatherFunc(request):
@@ -60,14 +70,16 @@ def weatherFunc(request):
     img = tran2(tran1(img)).unsqueeze(0).to('cpu')
     pred = weather_model(img)
     pred = torch.softmax(pred,dim=1)
-    weather_specises = ['cloudy', 'rainy', 'snow', 'sunny']
-    weather_tag = torch.argmax(pred, dim=1)
     rate_list = pred.detach().numpy().tolist()[0]
+    weather_tags = ['多云', '雨', '雪', '晴']
+    sorted_rate, sorted_tag = zip(*sorted(zip(rate_list, weather_tags),reverse=True))
+
+    max_tag = torch.argmax(pred, dim=1)
+    
     return_obj = {
-        'weather' : weather_specises[int(weather_tag)],
-        'weather_id' : int(weather_tag),
-        'tags':  weather_specises,
-        'rate': rate_list
+        'weather' : weather_tags[int(max_tag)],
+        'tags':  sorted_tag,
+        'rate': sorted_rate
     }
     return returnList(return_obj)
 import os

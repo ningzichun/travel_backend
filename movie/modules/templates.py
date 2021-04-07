@@ -1,7 +1,7 @@
 from moviepy.editor import *
 from .resources import *
 
-total_photo_template=[1,2,3]
+total_photo_template=[1,2,3,3,4]
 
 def openning_simple(title = "Title", desc = '',bg_image=randImage()):
     default_font=randFont()
@@ -37,6 +37,23 @@ def photo_three_simple(images,bg_image=randImage()):
     #this_part = CompositeVideoClip(part_clips,size=screensize)
     return (part_clips,9)
 
+def photo_three_1(images,bg_image=""):
+    background_clip = ImageClip(templates_path+'temp_31.png')
+    clip1 = ImageClip(np.array(cut_to_size(1216 ,624,images[0])),duration=10).set_start(crossTime).add_mask().set_pos((28 ,15 )).crossfadein(0.5).crossfadeout(0.5)
+    clip2 = ImageClip(np.array(cut_to_size(702 ,354,images[1])),duration=8).set_start(crossTime+2.5).add_mask().set_pos((26 , 670 )).crossfadein(0.5).crossfadeout(0.5)
+    clip3 = ImageClip(np.array(cut_to_size(498 ,359,images[2])),duration=8).set_start(crossTime+5.5).add_mask().set_pos((1301 , 15 )).crossfadein(0.5).crossfadeout(0.5)
+    part_clips = [background_clip,clip1,clip2,clip3]
+    return (part_clips,9)
+
+def photo_four_1(images,bg_image=""):
+    background_clip = ImageClip(templates_path+'temp_41.png')
+    clip1 = ImageClip(np.array(cut_to_size(709,402,images[0])),duration=10).set_start(crossTime).add_mask().set_pos((196,103)).crossfadein(0.5).crossfadeout(0.5)
+    clip2 = ImageClip(np.array(cut_to_size(709,402,images[1])),duration=8).set_start(crossTime+2.5).add_mask().set_pos((958, 139)).crossfadein(0.5).crossfadeout(0.5)
+    clip3 = ImageClip(np.array(cut_to_size(709,402,images[2])),duration=8).set_start(crossTime+5.5).add_mask().set_pos((198, 539)).crossfadein(0.5).crossfadeout(0.5)
+    clip4 = ImageClip(np.array(cut_to_size(709,402,images[2])),duration=8).set_start(crossTime+5.5).add_mask().set_pos((958, 573)).crossfadein(0.5).crossfadeout(0.5)
+    part_clips = [background_clip,clip1,clip2,clip3,clip4]
+    return (part_clips,9)
+
 def photo_one_with_poem_simple(images,bg_image=randImage(),poem="层楼倚高阁\n走马拥江东\n欲问升平日\n交交第二功"):
     background_clip = ImageClip(np.array(cut_to_cover(bg_image)))
     clip1 = ImageClip(images[0],duration=10).resize(width=1200, height=600).set_start(crossTime).add_mask().rotate(3).set_pos(lambda t: (130+t,200+2*t)).crossfadein(0.5).crossfadeout(0.5)
@@ -68,7 +85,9 @@ openning_templates = [
 photo_templates = [
     photo_one_simple,
     photo_two_simple,
-    photo_three_simple
+    photo_three_simple,
+    photo_three_1,
+    photo_four_1
 ]
 
 photo_with_poem_templates = [

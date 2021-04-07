@@ -21,6 +21,11 @@ class Photo(models.Model):
     photo_title = models.CharField(max_length=256,verbose_name='标题',null=True)
     photo_description = models.CharField(max_length=256,verbose_name='描述',null=True)
     photo_cover = models.CharField(max_length=256,verbose_name='封面图',null=True)
+    
+    cover_width = models.IntegerField(verbose_name='封面宽',null=True)
+    cover_height = models.IntegerField(verbose_name='封面高',null=True)
+    photo_width = models.IntegerField(verbose_name='长图宽',null=True)
+    photo_height = models.IntegerField(verbose_name='长图高',null=True)
     class Meta:
         verbose_name = '长图'
         verbose_name_plural = '长图表'

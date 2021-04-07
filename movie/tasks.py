@@ -76,6 +76,10 @@ def makeMovie(wid,uid):
         cov_name = "/cover"+randStr(4)+".jpg"
         command['location'] = work_dir+vid_name
         command['openning']['cover'] = work_dir+cov_name
+        if 'fps' in load_dict:
+            if int(load_dict['fps'])>0 and int(load_dict['fps'])<61:
+                print("fps",int(load_dict['fps']))
+                command['fps'] = int(load_dict['fps'])
 
         # 影集生成
         work_obj.status = 105
