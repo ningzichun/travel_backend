@@ -2,7 +2,7 @@
 #遗传算法，为最后一层生成参数
 #输出：
 #第一个参数这个影集照片数量，第二个参数是一个数组 第i项代表第i张图片的gif数量，第三个参数是一个数组，第i项是第i个gif 的id（现在是地址），(第四个参数是规定尺寸
-# 第五个参数是规定位置
+# 第五个参数是规定位置，这个可以根据id一起取？最后再说吧，不行就三个参数是地址 尺寸位置)最后一个参数是音乐的卡点时间
 
 #输入数据格式：
 import random
@@ -11,9 +11,10 @@ import xlrd
 import functools
 from . import generate
 import copy
+from . import get_tempalte
 
 from .filelist import *
-from .templates import total_photo_template
+from .templates import total_photo_template,openning_templates,photo_with_poem_templates,ending_templates
 
 pt="./movie/modules/assets/gifs/" #资源文件目录
 xls_file= r"./movie/modules/assets/gifs/info.xls" #xls文件
@@ -71,7 +72,7 @@ ctrl_times=100
 # 模板类的定义
 class gif_Template:
     # 构造函数用于生成初代：
-    def __init__(self, photo_num, ini):
+    def __init__(self, photo_num, ini,temp=[]):
         self.template=[] #模板列表 第 i项是 第 i个模板的id
         self.backgroud=[] #背景图列表 第 i项是 第i张背景图
         self.pic_num = photo_num;  # 图片数量
@@ -83,21 +84,13 @@ class gif_Template:
         self.weather = []
         self.factor = []
         self.scores = 0
+
         # 提示要初始化的时候才进行
         if ini != 0:
-            left_picture=self.pic_num
-            #先把模板的数量给匹配出来
-            while left_picture!=0:
-                ok=1
-                while ok==1:
+            self.template=temp
+            #get_tempalte.gene_gif_main()    ###
 
-                    rand_template_no=random.randint(0,len(total_photo_template)-1)
-
-                    if total_photo_template[rand_template_no]<=left_picture:
-                        ok=0
-                self.template.append(rand_template_no)
-                left_picture=left_picture-total_photo_template[rand_template_no]
-
+            
             #给每个模板挨个匹配gif
             for i in range(0, len(self.template)):
                 self.gif_num.append(0)
@@ -222,6 +215,28 @@ def Gene_breed(sequence_a,sequence_b):
     k=0
     for i in range(0,len(new_breed.gif_num)):
        k=k+new_breed.gif_num[i]
+    # if len(new_breed.path)!=k:
+    #     print("wrong!!!!!!")
+    #
+    #     print(sequence_a.gif_num[0:point_a])
+    #     print(sequence_b.gif_num[point_a:point_b])
+    #     print(sequence_a.gif_num[point_b:the_number1])
+    #
+    #     print(number_a_a)
+    #     print(number_b_b)
+    #     print(sequence_a.path[0:number_a_a[point_a - 1]])
+    #     print(sequence_b.path[number_b_b[point_a - 1]:number_b_b[point_b - 1]])
+    #     print(sequence_a.path[number_a_a[point_b - 1]:number_a_a[the_number - 1]])
+    #
+    #
+    #     print(point_b)
+    #     print(point_a)
+    #     print(sequence_b.gif_num)
+    #     print(sequence_a.gif_num)
+    #     print(new_breed.gif_num)
+    #
+    #     print(new_breed.path)
+    #     print("..........................")
     return new_breed
 
 
@@ -235,8 +250,17 @@ def cmp(ak,bk):
 #主函数 调用函数
 def gene_gif_main(path_1,path_2,number,pathhh,weatherrr,colorrr):
 
-    print("kais")
+    print("遗传算法开始")
+    #获取template的选择
+    t=get_tempalte.gene_gif_main(number,pathhh,weatherrr,colorrr)
+
     #加载图片数据 ##等待文件格式
+    #pictures
+    ###正经程序写在这儿。。
+#    data_picture=xlrd.open_workbook(path_2)
+#    table_picture=data_picture.sheet_by_name("Sheet1")
+#    for i in range(1,number+1):
+#        _picture=picture()
 ##测试输入
     for i in range(0,number):
         pictures.append(picture(colorrr[i],[],weatherrr[i],pathhh[i]))
@@ -251,6 +275,7 @@ def gene_gif_main(path_1,path_2,number,pathhh,weatherrr,colorrr):
         factor=strs.split(';')
         
         #_paths=pt+str(table_gif.cell(i,0).value)+".gif"
+        #不知道为啥要取一次整数
         aka=round(table_gif.cell(i,0).value)
         _paths = pt + str(aka) + ".gif"
         #_paths=table_gif.cell(i,0).value
@@ -267,13 +292,17 @@ def gene_gif_main(path_1,path_2,number,pathhh,weatherrr,colorrr):
     score=0
     #随机生成初代目
     for i in range(0,firsit_num):
-        a_gif_Template=gif_Template(number,1)
+        a_gif_Template=gif_Template(number,1,t.no)
         pre_gif.append(a_gif_Template)
 
     deida_times=0
     while deida_times < ctrl_times:
 
+        #print("il")
+        #print(pre_gif)
         new_gif.clear()
+        #print("ki")
+        #print(pre_gif)
         for i in range(0,len(pre_gif)):
             pre_gif[i].scores=pre_gif[i].gif_fit()
 
@@ -320,23 +349,22 @@ def gene_gif_main(path_1,path_2,number,pathhh,weatherrr,colorrr):
     return new_gif[0]
 
 
-def FromHere(img_num,path,weather,color,load_dict,res_poem):
-    print("img_num: ",img_num)
+def geneticMain(img_num,path,weather,color,factors,load_dict,res_poem):
+    #print("img_num: ",img_num)
     kiss=gene_gif_main(xls_file,"",img_num,path,weather,color)
-    print(kiss.gif_num)
-    print(kiss.path)
-    print(kiss.color)
-    print(kiss.template)
+    # print(kiss.gif_num)
+    # print(kiss.path)
+    # print(kiss.color)
+    # print(kiss.template)
     openning = {
-        'id' : 0,
+        'id' : random.randint(0,len(openning_templates)-1),
         'title' : load_dict["title"],
         'desc' : load_dict["description"],
         'bg_image' : randImage()
     }
     ending = {
-        'id' :0,
-        'text' : 'END',
-        'bg_image' : randImage()
+        'id' :random.randint(0,len(ending_templates)-1),
+        'text' : 'END'
     }
     middle = {
         'num' : len(kiss.template) ,  #模板数目
@@ -344,7 +372,7 @@ def FromHere(img_num,path,weather,color,load_dict,res_poem):
     }
     img_cnt = 0
     gif_cnt = 0
-    print(kiss.gif_num)
+    # print(kiss.gif_num)
     for i in range(len(kiss.template)):
         template = {   #模板
             'id' : kiss.template[i],
@@ -369,8 +397,7 @@ def FromHere(img_num,path,weather,color,load_dict,res_poem):
         'num' : 1,
         'templates' : [
             {
-                'id' : 0,
-                'bg_image' : randImage(),
+                'id' : random.randint(0,len(photo_with_poem_templates)-1),
                 'images' : path,
                 'poem' : res_poem
             }

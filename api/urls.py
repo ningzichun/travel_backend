@@ -11,5 +11,5 @@ urlpatterns = [
     path('info', views.getInfo),
     path('poem', views.getPoem),
     path('img2poem', views.genPoemFromImg),
-    path('test', views.getTest),
+    path('style', views.stylizePhoto),
 ]

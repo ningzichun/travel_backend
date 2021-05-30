@@ -13,4 +13,5 @@ urlpatterns = [
     path('comment/new', views.newComment),
     path('comment/<int:cid>/delete', views.deleteComment),
     path('comment/<int:cid>/like', views.deleteComment),
+    path('movie/', views.indexMovie),
 ]

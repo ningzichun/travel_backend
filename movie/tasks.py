@@ -24,6 +24,7 @@ def makeMovie(wid,uid):
         work_obj.status = 101
         work_obj.status_msg = "正在分析命令参数"
         work_obj.save()
+        print("正在分析命令参数")
 
         # 读取info 处理path 传递参数
         with open( work_dir + "/info.json",'r') as load_f:
@@ -38,11 +39,11 @@ def makeMovie(wid,uid):
         work_obj.status_msg = "正在分析图片"
         work_obj.save()
         from movie.modules.info import getInfo
+        print("正在分析图片颜色天气等信息")
 
         weather_specises = ['云', '雨', '雪', '晴']
         weather,color = getInfo(image_paths)
 
-        work_obj.status_msg = "正在生成影集"
         work_obj.save()
 
         
@@ -51,6 +52,7 @@ def makeMovie(wid,uid):
         work_obj.status_msg = "正在生成诗词"
         work_obj.save()
         from travel.load_files import generatePoet
+        print("正在生成诗词")
 
         img0_fac = load_dict['factors'][0]
         keyword = weather_specises[weather[0]]+" "+cn_dict[img0_fac["types"][2]]
@@ -68,8 +70,9 @@ def makeMovie(wid,uid):
         work_obj.status = 104
         work_obj.status_msg = "正在匹配模板"
         work_obj.save()
-        from movie.modules.genetic import FromHere
-        command = FromHere(img_num,image_paths,weather,color,load_dict,res_poem)
+        print("正在匹配模板")
+        from movie.modules.genetic import geneticMain
+        command = geneticMain(img_num,image_paths,weather,color,load_dict['factors'],load_dict,res_poem)
 
         # 组装命令
         vid_name = "/result"+randStr(4)+".mp4"
@@ -85,6 +88,7 @@ def makeMovie(wid,uid):
         work_obj.status = 105
         work_obj.status_msg = "正在生成影集"
         work_obj.save()
+        print("正在生成影集")
         from movie.modules.generate import generateMovie
         generateMovie(command)
         
@@ -96,22 +100,6 @@ def makeMovie(wid,uid):
         work_obj.movie_cover = "/media/movies/"+str(wid)+cov_name
         work_obj.save()
 
-        # 分享影集
-        from movie.views import shareFunc
-        if 'share' in load_dict:
-            if load_dict['share']:
-                movie_info = {
-                    'work_id': work_obj.work_id,
-                    'movie_title' : work_obj.movie_title,
-                    'movie_description' : work_obj.movie_description,
-                    'movie_cover' : work_obj.movie_cover,
-                    'create_time' : work_obj.create_time.strftime('%Y-%m-%d %H:%M:%S'),
-                    'update_time' : work_obj.update_time.strftime('%Y-%m-%d %H:%M:%S'),
-                    'status' : work_obj.status,
-                    'status_msg' : work_obj.status_msg,
-                    'result_msg' : work_obj.result_msg,
-                }
-                shareFunc(uid,movie_info)
         print("Finish.")
     except Exception as e:
         print(traceback.format_exc(e))

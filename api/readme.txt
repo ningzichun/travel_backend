@@ -4,62 +4,26 @@
 │  └─views.py	对来自用户的请求的解析及处理
 │  └─modules	接口所用模块
 │      └─get_color.py	主题色提取模块
-│      └─FSRCNN	超分辨率
-│          └─fsrcnn.py	超分辨率处理接口
-│          └─models.py	模型类
-│          └─utils.py	相关工具
+│      ├─FSRCNN	超分辨率
+│      │      fsrcnn.py	超分辨率处理接口
+│      │      models.py		模型类
+│      │      utils.py	相关工具
+│      └─style	风格迁移模块
+│              neural_style.py	风格迁移接口
+│              transformer_net.py	风格迁移网络
+│              utils.py	模块相关工具
 
 views.py: 用户请求处理
 urls.py: URL重写
 models.py: 相关数据库模型
 admin.py: 管理员配置
 
-色彩提取
-接口地址：/api/color
-请求方式：POST
-请求参数：
-| 名称  | 类型 | 必填 | 说明       |
-| ----- | ---- | ---- | ---------- |
-| image | file | 是   | 待处理图片 |
-| k     | int  | 否   | 默认为3    |
-
-天气识别
-接口地址：/api/weather
-请求方式：POST
-请求参数：
-| 名称  | 类型 | 必填 | 说明       |
-| ----- | ---- | ---- | ---------- |
-| image | file | 是   | 待处理图片 |
-
-诗词生成
-接口地址：/api/poem
-请求方式：POST
-请求参数：
-| 名称       | 类型   | 必填 | 说明                                                         |
-| ---------- | ------ | ---- | ------------------------------------------------------------ |
-| keyword    | string | 是   | 关键词                                                       |
-| length     | int    | 否   | 选择诗词长度，5 或 7，默认 5                                 |
-| experience | int    | 否   | 选择生活经历，0: 戎马生涯, 1: 乡村生活, 2: 其他:, -1: 不指定，默认为 1 |
-| history    | int    | 否   | 选择历史背景，0: 盛世, 1: 乱世, -1: 不指定，默认为 0         |
-
-图片生成诗词
-接口地址：/api/img2poem
-请求方式：POST
-请求参数：
-| 名称       | 类型   | 必填 | 说明                                                         |
-| ---------- | ------ | ---- | ------------------------------------------------------------ |
-| keyword    | string | 是   | 关键词                                                       |
-| types      | string | 是   | 逗号分隔的物体识别结果                                       |
-| values     | float  | 是   | 逗号分隔的概率                                               |
-| length     | int    | 否   | 选择诗词长度，5 或 7，默认 5                                 |
-| experience | int    | 否   | 选择生活经历，0: 戎马生涯, 1: 乡村生活, 2: 其他:, -1: 不指定，默认为 1 |
-| history    | int    | 否   | 选择历史背景，0: 盛世, 1: 乱世, -1: 不指定，默认为 0         |
-
-坐标解析
-接口地址：/api/location
-请求方式：GET/POST数组
-请求参数：
-| 名称      | 类型  | 必填 | 说明 |
-| --------- | ----- | ---- | ---- |
-| longitude | float | 是   | 经度 |
-| latitude  | float | 是   | 纬度 |
+相关入口程序：
+模块		api地址		入口函数名
+色彩提取		/api/color		views.getColorFunc
+超分辨率		/api/fsrcnn	views.FSRCNNFunc
+天气识别		/api/weather	views.weatherFunc
+坐标解析		/api/location	views.getLocation
+诗词生成		/api/poem	views.getPoem
+图片生成诗词	/api/img2poem	views.genPoemFromImg
+风格迁移 		/api/style		views.stylizePhoto

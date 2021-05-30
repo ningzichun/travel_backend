@@ -1,13 +1,34 @@
 该文件夹为长图应用文件夹。
 
  .
-├─photo	长图
+├─photo
+│  │  admin.py	管理员配置
+│  │  models.py	长图数据库模型
+│  │  tasks.py	Celery异步任务程序
+│  │  urls.py	URL重写
+│  │  views.py	用户请求处理
+│  │
 │  └─modules	长图生成模块
-│      ├─cost_calculate.py	距离计算模块
-│      ├─genetic_for_longpic.py	遗传模块
-│      ├─long_pic.py	图片生成模块
+│      │  begin_plog.py	长图部分合成
+│      │  cost_calculate.py	代价函数计算
+│      │  genetic_for_longpic.py	遗传模块
+│      │  get_template.py	元素合成
+│      │  long_pic.py	长图接口
+│      │  pl_lunzi.py	长图部分合成
+│      │
+│      ├─imgs
+│      ├─PoolNet	显著性检测模块
+│      │  │  caijian_main.py	裁剪模块
+│      │  │  get_main_pic.py	主接口实现
+│      │  │  lunzi.py	相关工具
+│      │  │  solver.py	模型解析
+│      │  ├─dataset	数据集
+│      │  │      dataset.py	数据集工具
+│      │  └─networks	网络
+│      │          deeplab_resnet.py		resnet网络
+│      │          poolnet.py	池化网络
 │      ├─resources	长图资源文件夹
-│      └─templates	长图模板文件夹
+│      └─templates	长图数据文件夹
 
 urls.py: 路由映射模块
 views.py: 路由映射函数模块，逻辑处理路由映射的需求
@@ -15,91 +36,21 @@ models.py: 模型模块，工作序列类
 admin.py: 管理接口
 
 
-长图生成接口
-新建长图
-接口地址：/photo/new
-请求方式：GET 
-接口说明：调用接口后，在服务器 "./media/photos/"+work_id处新增一文件夹
-返回参数：
-| 名称    | 说明     |
-| ------- | -------- |
-| work_id | 作业集号 |
 
-上传文件
-接口地址：/photo/$work_id/upload
-请求方式： POST
-接口说明：文件名将在服务器按时间重新生成
-请求参数：
-| 名称 | 类型 | 必填 | 说明 |
-| ---- | ---- | ---- | ---- |
-| file | file | 是   | 文件 |
-返回参数：
-| 状态码 | 返回json中，msg的值                          | 说明 |
-| ------ | -------------------------------------------- | ---- |
-| 200    | 操作成功                                     |      |
-| 403    | 未登录或登录超时\|找不到作业集\|未获取到file |      |
-返回JSON说明：
-| 名称     | 说明                                                      |
-| -------- | --------------------------------------------------------- |
-| filename | 上传后的文件名                                            |
-| url      | 相对于根目录地址，"/media/photos/"+$work_id+"/"+$filename |
+相关入口程序：
+模块		api地址			入口函数名
+新建长图		/photo/new		views.newPhoto
+上传文件		/photo/$work_id/upload	views.uploadImage
+开始生成长图	/photo/$work_id/start	views.startPhoto
+获取作业状态	/photo/$work_id/status	views.getStatus
+删除长图		/photo/$work_id/delete	views.deletePhoto
+用户生成长图列表	/photo/list		views.myPhotoList
+用户所有长图列表	/photo/myall		views.myPhotoListAll
+分享的长图列表	/photo/all			views.photoListAll
+点赞长图		/photo/<int:wid>/like	views.likePhoto
+获取长图评论	/photo/<int:wid>/comment	views.getComment
+评论长图		/photo/<int:wid>/comment/new	views.newComment
+给评论点赞	/photo/comment/<int:cid>/like	views.likeComment
+删评		/photo/comment/<int:cid>/delete	views.deleteComment
 
-开始生成长图
-接口地址：/photo/$work_id/start
-请求方式：GET
-说明：调用该接口后，后端启动异步任务。根据不同任务状态，决定是否重新生成。
-返回参数：
-| 状态码 | 返回json中，msg的值                                          | 说明 |
-| ------ | ------------------------------------------------------------ | ---- |
-| 200    | 操作成功\|已重新加入队列\|原执行失败，已重新加入队列\|已加入队列 |      |
-| 403    | 未登录或登录超时\|找不到作业集\|任务已过期，请重新新建\|任务已完成\|已在 "+task_obj.state+" 队列中 |      |
-
-获取作业状态
-接口地址：/photo/$work_id/status
-请求方式：GET
-说明：调用该接口后，后端启动异步任务，需要手动查询处理状态
-返回参数：
-| 状态码 | 返回json中，msg的值            | 说明 |
-| ------ | ------------------------------ | ---- |
-| 200    | 操作成功                       |      |
-| 403    | 未登录或登录超时\|找不到作业集 |      |
-返回JSON说明：
-| 名称        | 说明                                                         |
-| ----------- | ------------------------------------------------------------ |
-| work_id     | 作业ID                                                       |
-| uid         |                                                              |
-| create_time | 作业创建时间                                                 |
-| update_time | 作业更新时间                                                 |
-| status      | 作业状态，(0,'未开始'),(1,"排队等待中"),(2,"正在生成"),(3,"已生成"),(-1,"生成失败"),(-2,"已过期被清理") |
-| description | 等待用户提供信息\|排队等待中\|正在处理\|处理完成\|生成失败\|找不到任务，请重新启动\|已过期 |
-| info        | Celery 任务 ID（完成前） 或 生成的长图链接（生成完成后）     |
-| image_num   | 在服务器上暂存的图片数目                                     |
-| image_urls  | 数组，图片的绝对地址                                         |
-
-删除长图
-接口地址：/photo/$work_id/delete
-请求方式：GET
-
-用户生成长图列表
-接口地址：/photo/list
-请求方式：GET
-返回JSON说明：
-| 名称              | 说明                                                         |
-| ----------------- | ------------------------------------------------------------ |
-| work_id           |                                                              |
-| photo_title       | 影集标题                                                     |
-| photo_description | 影集描述                                                     |
-| create_time       | 作业创建时间                                                 |
-| update_time       | 作业更新时间                                                 |
-| status            | 作业状态，(0,'未开始'),(-1,"生成失败"),(-2,"已过期被清理")<br/>100 排队等待中 101 正在分析命令参数 102 正在分析图片 103 正在生成诗词 104 正在匹配模板 105 正在生成影集 200 处理完成 |
-| status_msg        | 等待用户提供信息\|排队等待中\|处理完成\|生成失败\|找不到任务，请重新启动\|已过期\|排队等待中 正在分析命令参数 正在分析图片 正在生成诗词  正在匹配模板 正在生成影集 |
-| result_msg        | Celery 任务 ID（完成前） 或 生成的影集链接（生成完成后）     |
-
-用户所有长图列表
-接口地址：/photo/myall
-请求方式：GET
-
-分享的长图列表
-接口地址：/photo/all
-请求方式：GET
 

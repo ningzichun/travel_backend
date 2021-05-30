@@ -3,9 +3,11 @@ from django.http import HttpResponse,HttpResponseForbidden
 from travel.codes import return200,return403,returnList
 from django.core.serializers import serialize
 from travel.modules.get_color import getColor
-from travel.modules.location import coordinate2address
+from travel.modules.location import coordinate2address,emptydict
 from api.modules.FSRCNN.fsrcnn import itFSRCNN
+from api.modules.style.neural_style import stylize
 import json
+import random
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
@@ -136,7 +138,7 @@ def getLocation(request):
     else:
         longitude = request.POST.get("longitude")
         latitude = request.POST.get("latitude")
-        if not (longitude and latitude) :
+        if ((longitude==None) or (latitude==None)) :
             return return403("经纬度参数错误")
         try:
             long_list = longitude.split(",")
@@ -144,8 +146,11 @@ def getLocation(request):
             list_len = len(long_list)
             return_obj = []
             for i in range(list_len):
-                print(float(long_list[i]),float(lat_list[i]))
-                return_obj.append(coordinate2address(float(long_list[i]),float(lat_list[i])))
+                if not(long_list[i] and lat_list[i]):
+                    return_obj.append(emptydict())
+                else:
+                    return_obj.append(coordinate2address(float(long_list[i]),float(lat_list[i])))
+            print("逆地理信息编码完成："+str(list_len))
             return returnList(return_obj)
         except Exception as e:
             return return403("在处理过程中发生了错误："+repr(e))
@@ -236,3 +241,23 @@ def getTest(request):
     s=sy.compare(a,b,seg=True)
     print(s)
     return HttpResponse(str(s))
+
+
+def stylizePhoto(request):
+    image = request.FILES.get('image',None)
+    if not image:
+        return return403('未获取到image')
+    from travel.load_files import styles
+    style = request.POST.get("style")
+    if not style :
+        style = random.sample(list(styles.keys()),1)[0]
+    if style not in styles:
+        return return403("指定的风格不存在："+str(styles.keys()))
+    opened_image = Image.open(image).convert('RGB')
+    opened_image.thumbnail((1024,1024))
+    res_img = stylize(opened_image,styles[style])
+    stream = BytesIO()
+    res_img.save(stream, 'JPEG')
+    base64_img = base64.b64encode(stream.getvalue()).decode()
+    return_data =  base64_img
+    return returnList(return_data)

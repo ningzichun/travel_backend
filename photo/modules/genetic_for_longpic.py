@@ -10,8 +10,10 @@ from . import cost_calculate as cc
 import xlrd
 import functools
 from . import long_pic as lc
+from . import get_template as gt
 
 xls_path = r"./photo/modules/resources/1.xls"
+tem_path = r"./photo/modules/templates/new_template.xls"
 pt = "./photo/modules/resources/"
 
 #加载图片类
@@ -43,7 +45,7 @@ pictures=[]
 
 k=8 #模板的数量
 p_allgif_t=10
-p_allgif_i=3 # p_allgif_i / p_allgif_t gif的产生率 对于初代而言
+p_allgif_i=7 # p_allgif_i / p_allgif_t gif的产生率 对于初代而言
 all_gif=[]#gif表装入内存
 #a=one_giftem()
 #all_gif.append(a)
@@ -64,6 +66,7 @@ ctrl_times=50
 #模板类的定义
 class gif_Template:
     # 构造函数用于生成初代：
+    #最后一个参数确定是模板还是元素 0是元素 1是模板
     def __init__(self,photo_num,ini):
         self.pic_num=photo_num;#图片数量
         self.gif_num=[]#gif数量（数组）
@@ -78,17 +81,18 @@ class gif_Template:
         if ini !=0:
             for i in range(0, photo_num):
                 self.gif_num.append(0)
-                p_allgif = random.randint(0, p_allgif_t)
-                if p_allgif < p_allgif_i:
-                    self.gif_num[i]=self.gif_num[i]+1
-                    gif_no=random.randint(1,k)
-                    self.path.append(all_gif[gif_no].path)
-                    self.size.append(all_gif[gif_no].size)
-                    self.position.append(all_gif[gif_no].position)
-                    self.color.append(all_gif[gif_no].color)
-                    self.weather.append(all_gif[gif_no].weather)
-                    self.factor.append(all_gif[gif_no].factor)
 
+                for j in range(3):
+                    p_allgif = random.randint(0, p_allgif_t)
+                    if p_allgif<p_allgif_i:
+                        self.gif_num[i] = self.gif_num[i] + 1
+                        gif_no = random.randint(1, k)
+                        self.path.append(all_gif[gif_no].path)
+                        self.size.append(all_gif[gif_no].size)
+                        self.position.append(all_gif[gif_no].position)
+                        self.color.append(all_gif[gif_no].color)
+                        self.weather.append(all_gif[gif_no].weather)
+                        self.factor.append(all_gif[gif_no].factor)
         # ...用于不同位置的模板这里还可以加
     #变异
     #编码方式：整数编码（会不会因为这个效果不好呢/疑问）
@@ -110,10 +114,10 @@ class gif_Template:
 
     #适应性函数
     def gif_fit(self):
-        number=len(self.path)
+        number=self.pic_num
         cost=0
         gif_no=0#gif编号
-        for i in range(0,number):
+        for i in range(0,number-1):
             for t in range(0,self.gif_num[i]):
                 cost=cost+cc.color_weight*cc.color(pictures[i].color,self.color[gif_no])
                 cost=cost+cc.factor_weight*cc.factor(pictures[i].factor,self.factor[gif_no])
@@ -126,6 +130,10 @@ class gif_Template:
 #交叉产生下一代
 #重写函数：
 def Gene_breed(sequence_a,sequence_b):
+    if len(sequence_a.gif_num)==1:
+        return sequence_b
+    if len(sequence_b.gif_num)==1:
+        return sequence_a
     new_breed=gif_Template(sequence_a.pic_num,0)
 
     the_number=min(len(sequence_a.gif_num),len(sequence_b.gif_num))
@@ -178,6 +186,7 @@ def Gene_breed(sequence_a,sequence_b):
                                                                       point_b - 1]] + sequence_a.size[
                                                                                       number_a_a[point_b - 1]:
                                                                                       number_a_a[the_number - 1]]
+
     return new_breed
 
 #原函数
@@ -225,28 +234,9 @@ def Gene_breed1(sequence_a,sequence_b):
     new_breed.size = sequence_a.size[0:number_a_a[point_a - 1]] + sequence_b.size[number_b_b[point_a - 1]:number_b_b[
         point_b - 1]] + sequence_a.size[
                         number_a_a[point_b - 1]:number_a_a[the_number - 1]]
-
-    #new_breed.weather=sequence_a.weather[0:point_a]+sequence_b.weather[point_a:point_b]
-
     t=0
     for i in new_breed.gif_num:
         t=t+i
-    if t!=len(new_breed.color):
-        print("##############################wrong!!!##############")
-        print(sequence_a.gif_num)
-        print(sequence_b.gif_num)
-
-        print(new_breed.gif_num)
-
-        print(point_a)
-        print(point_b)
-
-        print(number_a_a)
-        print(number_b_b)
-
-        print(sequence_a.color)
-        print(sequence_b.color)
-        print(new_breed.color)
     return new_breed
 def cmp(ak,bk):
     if ak.scores<bk.scores:
@@ -274,14 +264,11 @@ def get_template(color,weather,factor):
         if weather[i]==t:
             weathers=i
     ans=lc.get_best_template(colors,weathers,factors)
-    print("lll")
-    print(ans)
     return ans
 
 #主函数 调用函数
 def gene_gif_main(path_1,path_2,number,pathhh,weatherrr,colorrr):
 
-    print("kais")
     
     for i in range(0,number):
         pictures.append(picture(colorrr[i],[],weatherrr[i],pathhh[i]))
@@ -292,15 +279,14 @@ def gene_gif_main(path_1,path_2,number,pathhh,weatherrr,colorrr):
 
     gif_numbers=table_gif.nrows
     for i in range(1,gif_numbers):
-        strs=table_gif.cell(i,1).value
-        factor=strs.split(';')
+        tap=table_gif.cell(i,1).value
         #_paths=pt+str(table_gif.cell(i,0).value)+".gif"
         #不知道为啥要取一次整数
         aka=round(table_gif.cell(i,0).value)
-        _paths = pt + str(aka) + ".png"
+        #_paths = pt + str(aka) + ".png"
         #_paths=table_gif.cell(i,0).value
         _thecolor=[table_gif.cell(i,2).value,table_gif.cell(i,3).value,table_gif.cell(i,4).value]
-        _gif=one_giftem(table_gif.cell(i,0).value,strs,table_gif.cell(i,8).value,[table_gif.cell(i,6).value,table_gif.cell(i,7).value],_paths,_thecolor,table_gif.cell(i,5).value)
+        _gif=one_giftem(table_gif.cell(i,0).value,tap,table_gif.cell(i,8).value,[table_gif.cell(i,6).value,table_gif.cell(i,7).value],aka,_thecolor,table_gif.cell(i,5).value)
 
         all_gif.append(_gif)
     #先代目和二代目
@@ -311,19 +297,16 @@ def gene_gif_main(path_1,path_2,number,pathhh,weatherrr,colorrr):
     new_score=0
     score=0
     #随机生成初代目
+    print("背景遗传算法初始化初代")
     for i in range(0,firsit_num):
         a_gif_Template=gif_Template(number,1)
         pre_gif.append(a_gif_Template)
 
     deida_times=0
-    #print(">>??")
+    print("遗传算法进行中")
     while deida_times < ctrl_times:
 
-        print("il")
-        #print(pre_gif)
         new_gif.clear()
-        #print("ki")
-        #print(pre_gif)
         for i in range(0,len(pre_gif)):
             pre_gif[i].scores=pre_gif[i].gif_fit()
 
@@ -333,7 +316,6 @@ def gene_gif_main(path_1,path_2,number,pathhh,weatherrr,colorrr):
         #pre_gif.sort()
 
         for i in range(0,select_num):
-            #print(i)
             new_gif.append(pre_gif[i])
 
 
@@ -349,28 +331,27 @@ def gene_gif_main(path_1,path_2,number,pathhh,weatherrr,colorrr):
         for i in range(0, firsit_num - select_num):
             mother = random.randint(0, select_num - 1)
             father = random.randint(0, select_num - 1)
-            # print(mother)
-            # print(father)
             new_gif.append(Gene_breed(new_gif[mother], new_gif[father]))
 
 
         pre_gif=new_gif[:]
         deida_times=deida_times+1
-        #print("<")
-        #print(new_gif[0].scores)
+
+
+    print("遗传算法完成")
     return new_gif[0]
 
-def generatePhoto(img_num,img_path,weather,color,cover_path,res_path):
+
+def generatePhoto(img_num,img_path,weather,color,cover_path,res_path,test_root,city_image_path,poem):
+    #获得显著性矩阵
+
     kiss=gene_gif_main(xls_path,"",img_num,img_path,weather,color)
 
-    print(kiss.gif_num)
-    print(kiss.path)
-    print(kiss.color)
+    tem1=gt.gene_tem_main(gt.tem_path,"",img_num,img_path,weather,color)
+
     factor = []
 
-    tem=get_template(color,weather,factor)
-
-    pics,cover_width,cover_height=lc.get_long_picture(tem,kiss.gif_num,kiss.path,img_path,cover_path)
+    pics,cover_width,cover_height=lc.get_long_picture(tem1,kiss.factor,kiss.gif_num,kiss.path,img_path,cover_path,test_root,city_image_path,poem)
 
     pics.save(res_path)
     res_width = pics.width

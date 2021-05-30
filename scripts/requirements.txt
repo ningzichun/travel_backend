@@ -5,10 +5,13 @@ django-redis
 opencv-python
 torch
 Pillow
-#django-tinymce
 torchvision
 celery
 xlrd
+nsfw
 synonyms
 moviepy
 shapely
+uwsgi
+pyexecjs
+mysqlclient

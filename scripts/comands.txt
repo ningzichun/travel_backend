@@ -24,7 +24,90 @@ systemctl daemon-reload
 #查看运行日志（记录了服务的运行日志，可以用于服务启动失败时的错误定位）
 journalctl -xe
 
+
+#修改ImageMagick配置
 vi /etc/ImageMagick-6/policy.xml
 
 注释  <policy domain="path" rights="none" pattern="@*"/>
 加 <policy domain="coder" rights="none" pattern="TEXT" />
+
+sed -i '/policy\ domain\=\"path\"\ rights\=\"none\"\ pattern\=\"\@\*/i\  <policy domain="coder" rights="none" pattern="TEXT" />' /etc/ImageMagick-6/policy.xml
+sed -i -e '/policy\ domain\=\"path\"\ rights\=\"none\"\ pattern\=\"\@\*/d' /etc/ImageMagick-6/policy.xml
+
+#uwsgi接口配置
+server {
+
+    listen          xx; 
+    server_name     xx
+    charset         UTF-8;
+    access_log      /var/log/nginx/myweb_access.log;
+    error_log       /var/log/nginx/myweb_error.log;
+
+    client_max_body_size 75M;
+
+    location / { 
+
+        include uwsgi_params;
+        uwsgi_pass 127.0.0.1:8000;
+        uwsgi_read_timeout 600;
+    }   
+    location /media {
+        alias BASE_DIR/media/;
+    }  
+    location /static {
+
+        expires 30d;
+        autoindex on; 
+        add_header Cache-Control private;
+        alias BASE_DIR/static/;
+    }
+
+}
+
+server {
+	#listen 80 default_server;
+	listen  80;
+	server_name SERVER_IP;
+	charset  utf-8;
+	location /static {
+		alias   /mysite/polls/static;	# 静态文件路径
+	}
+	location /TARGET_URL {
+		uwsgi_pass   127.0.0.1:8000;
+		include      /etc/nginx/uwsgi_params;
+	}
+	root 前端dir;
+}
+
+service nginx restart
+
+
+#mariadb集群
+vi /etc/my.cnf 打开配置文件，增加以下配置信息。
+
+wsrep-provider=/usr/lib64/galera-3/libgalera_smm.so   # wsrep提供者
+
+wsrep_cluster_name='mysql_cluster'  #集群的名字，必须是统一的
+wsrep_cluster_address=gcomm://192.168.119.128,192.168.119.129,192.168.119.130  #集群中的其他节点地址
+
+wsrep_node_name = node1              #该节点的名称
+wsrep_node_address='192.168.119.128' #该节点的地址
+
+wsrep_sst_method=rsync    # 集群使用rsync同步方式
+wsrep_sst_auth=USER_STR:PASS_STR # 集群同步的用户名密码
+
+
+
+python3 manage.py collectstatic 
+
+
+使用到的端口：（4个）
+3306：数据库对外服务的端口
+444：请求SST(State Snapshot Transfer,全量数据传送)的端口号
+4567：组成员之间进行沟通的端口号
+4568：用于传输IST（Incremental State Transfer,增量数据传送）的端口号
+默认的galera端口为TCP 4567；另外还需要注意SST方式的端口，例如mysqldump的端口为TCP 3306，请务必保证各个节点的这些端口相互可达。（src 安装配置mariadb galera实现数据库master-master集群）
+
+集群至少需要2个节点，但建议不少于3个节点。当集群只有2个节点时，若某一节点异常，而不是由systemd或init手动关闭，另一节点的状态会转变为nonoperational。这是为了确保数据的完整性，禁止任何数据的传入或传出，直至手动干预。
+
+

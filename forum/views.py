@@ -40,6 +40,9 @@ def index(request):
     cache.set('index', return_data, 30)
     return returnList(return_data)
 
+
+
+
 def getPost(request,pid):
     cached = cache.get('post'+str(pid))
     if cached:
@@ -76,7 +79,7 @@ def getPost(request,pid):
             'comment_id': i.comment_id,
             'uid' : i.uid.uid,
             'uname' : i.uid.uname,
-            'gender' : post_obj.uid.gender,
+            'gender' : i.uid.gender,
             'avatar' : '/media/'+i.uid.avatar.name,
             'text' : i.text,
             'time' : i.time.strftime("%Y-%m-%d %H:%M:%S"),
@@ -232,3 +235,32 @@ def likeComment(request,cid):
     request.session['c'+str(cid)] = 1
     cache.expire('post'+str(comment_obj.post_id.post_id), timeout=5)
     return return200('操作成功')
+
+def indexMovie(request): 
+    new_posts = Post.objects.filter(post_type=2).order_by('-time')
+    
+    postNum = new_posts.count()
+    
+    return_data = {
+        'post_num' : postNum,
+        'new_posts' : [],
+    }
+
+    for i in new_posts:
+        return_data['new_posts'].append({
+            'post_id': i.post_id,
+            'uid' : i.uid.uid,
+            'uname' : i.uid.uname,
+            'gender' : i.uid.gender,
+            'avatar' : '/media/'+i.uid.avatar.name,
+            'title' : i.title,
+            'text' : i.text,
+            'type' : i.post_type,
+            'cover' : i.cover,
+            'reference' : json.loads(i.reference),
+            'time' : i.time.strftime("%Y-%m-%d %H:%M:%S"),
+            'like_num' : i.like_num,
+        })
+
+    return returnList(return_data)
+

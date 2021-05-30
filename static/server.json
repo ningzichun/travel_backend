@@ -5,11 +5,11 @@
 		"server" : [
 			{
 				"name" : "gz",
-				"address" : "https://gz.file.mrning.com/",
+				"address" : "https://gz.file.mrning.com/"
 			},
 			{
 				"name" : "ca",
-				"address" : "https://ca.file.mrning.com/",
+				"address" : "https://ca.file.mrning.com/"
 			}
 		]
 	}

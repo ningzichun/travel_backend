@@ -25,7 +25,7 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 SECRET_KEY = 'g-n#9e6ncb4p*xi&7y&g@o4nwto$=y34@t5*)iz&u++uq4cjx2'
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
+DEBUG = False
 
 ALLOWED_HOSTS = ['*']
 
@@ -146,28 +146,28 @@ USE_TZ = False
 
 # 文件配置
 STATIC_URL = '/static/'
-STATICFILES_DIRS = (
-    os.path.join(BASE_DIR, 'static'),
-)
+STATIC_ROOT = os.path.join(BASE_DIR, "static")
+# STATICFILES_DIRS = [
+#     os.path.join(BASE_DIR, "static"),
+# ]
 
-MEDIA_URL = '/media/'
-MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
-
+MEDIA_URL = "/media/"
+MEDIA_ROOT = os.path.join(BASE_DIR, "media")
 
 LOGGING = {
     'version': 1,
     'disable_existing_loggers': False,
-    'formatters':{#格式化
+    'formatters':{  #格式化
         'simple':{
-            'format':'%(asctime)s [%(asctime)s] %(filename)s on line %(lineno)d --> %(message)s',
+            'format':'[%(asctime)s] %(filename)s on line %(lineno)d --> %(message)s',
             'datefmt':'%Y-%m-%d %H:%M:%S'
-        },
+        },   
         'timeinfo':{
-            'format':'[%(asctime)s][%(levelname)s] %(pathname)s on line %(lineno)d --> %(message)s',
+            'format':'[%(asctime)s][%(levelname)s] %(filename)s on line %(lineno)d --> %(message)s',
             'datefmt':'%Y-%m-%d %H:%M:%S'
         }
     },
-    'handlers': {#处理器
+    'handlers': {   #处理器
         'console': {
             'class': 'logging.StreamHandler',
             'formatter':'timeinfo'
@@ -197,6 +197,6 @@ CELERY_TASK_TRACK_STARTED = True
 CELERY_TASK_TIME_LIMIT = 30 * 60
 #CELERY_WORKER_HIJACK_ROOT_LOGGER = False
 
-CELERY_WORKER_LOG_FORMAT = '[%(asctime)s][%(levelname)s] %(filename)s on line %(lineno)d --> %(message)s'
+CELERY_WORKER_LOG_FORMAT = '[%(asctime)s] %(filename)s on line %(lineno)d --> %(message)s'
 
 #import travel.load_files

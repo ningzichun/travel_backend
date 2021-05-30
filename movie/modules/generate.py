@@ -1,122 +1,119 @@
 from moviepy.editor import *
-import moviepy.video.fx.all as vfx
 from .resources import *
 from .templates import *
 import billiard as multiprocessing
-#from moviepy.multithreading import multithread_write_videofile
 
 multi_files = []
-music_clip = None
-def genClipByCommand(type,comm):
+
+def genClipByCommand(type,comm,target_fps):
     print(type,comm)
+    coverGen = 0
     if type==1:
         openning,op_duration = openning_templates[comm['id']](comm['title'],comm['desc'],comm['bg_image'])
-        #openning.save_frame(comm['cover'], t='00:00:04')
-        np_frame = openning.get_frame(op_duration-1)
-        generateCover(np_frame,comm['cover'])   #生成封面
-        return exportTmpFile(openning.set_duration(op_duration))
+        if random.random()>0.6:
+            coverGen = 1
+            np_frame = openning.get_frame(op_duration-1)
+            generateCover(np_frame,comm['cover'])   #生成封面
+        return exportTmpFile(openning.with_duration(op_duration),target_fps)
     elif type==2:
-        this_clips, clip_duration = photo_templates[comm['id']](comm['images'],comm['bg_image'])
+        this_clips, clip_duration = photo_templates[comm['id']](comm['images'])
         if(comm['gif_num']):
             gif_num = comm['gif_num']
             gifs = comm['gifs']
             for i in range(gif_num):
-                print(gifs[i])
-                this_clips.append(VideoFileClip(gifs[i]["path"], has_mask=True).resize(height=gifs[i]['size']).set_fps(5).set_duration(8).set_start(0).set_position((gifs[i]['position'][0], gifs[i]['position'][1])))
-        return exportTmpFile(CompositeVideoClip(this_clips,size=screensize).set_duration(clip_duration))
+                this_clips.append(VideoFileClip(gifs[i]["path"], has_mask=True).resize(height=gifs[i]['size']).with_fps(target_fps).freeze(total_duration=clip_duration).with_start(0).with_position((gifs[i]['position'][0], gifs[i]['position'][1])))
+        result_clip = CompositeVideoClip(this_clips,size=screensize).with_duration(clip_duration)
+        if not coverGen:
+            coverGen = 1
+            np_frame = result_clip.get_frame(clip_duration-1)
+            generateCover(np_frame,comm['cover'])   #生成封面
+        return exportTmpFile(result_clip,target_fps)
     elif type==3:
-        this_clip, clip_duration = photo_with_poem_templates[comm['id']](comm['images'],comm['bg_image'],comm['poem'])
-        return exportTmpFile(this_clip.set_duration(clip_duration))
+        this_clip, clip_duration = photo_with_poem_templates[comm['id']](comm['images'],comm['poem'])
+        return exportTmpFile(this_clip.with_duration(clip_duration),target_fps)
     elif type==5:
-        ending, ed_duration = ending_templates[comm['id']](comm['text'],comm['bg_image'])
-        return exportTmpFile(ending.set_duration(ed_duration))
+        ending, ed_duration = ending_templates[comm['id']](comm['text'])
+        return exportTmpFile(ending.with_duration(ed_duration),target_fps)
 
+def concatClips(tmp_files,result_file,music_clip):
+    target_comm = { "videos":[], "transitions":[],'args':['-shortest','-pix_fmt','yuv420p'],'concurrency':10 }
+    target_comm['output'] = result_file
+    target_comm['audio'] = music_clip
+    for i in tmp_files:
+        target_comm["videos"].append(i)
+    for i in range(len(tmp_files)-1):
+        target_comm["transitions"].append({
+            "name" : randTrans(),
+            "duration" : randDura()
+        })
+    target_comm = "module.paths.push('/usr/local/lib/node_modules/'); const concat = require('ffmpeg-concat'); concat(" + str(target_comm) + ")"
+    with open(result_file+".js", 'w') as output_file:
+        output_file.write(target_comm)
+    cmd = 'xvfb-run -s "-ac -screen 0 1280x1024x24" node '+result_file+".js"
+    print(cmd)
+    print(target_comm)
+    return not os.system(cmd)
+
+
+def error_handler(e):
+    raise Exception(str(e))
 
 def generateMovie(command):
-
+    cover_name = command['openning']['cover']
     print(command)
 
-    pool = multiprocessing.Pool(processes=10)
+    pool = multiprocessing.Pool(processes=16)
     workers=[]
     current_time=0
+    target_fps = command['fps']
 
     print("开头生成")
-    print(command['openning'])
-    workers.append(pool.apply_async(genClipByCommand,(1,command['openning'])))
+    workers.append(pool.apply_async(genClipByCommand,(1,command['openning'],target_fps),error_callback=error_handler))
 
     
     print("展览片段生成")
-    print(command['middle'])
     templates = command['middle']['templates']
     for i in range(command['middle']['num']):
+        templates[i]['cover'] = cover_name
         print(templates[i])
-        workers.append(pool.apply_async(genClipByCommand,(2,templates[i])))
+        workers.append(pool.apply_async(genClipByCommand,(2,templates[i],target_fps),error_callback=error_handler))
     
-
     if 'poem' in command:
         print("诗词片段生成")
-        print(command['poem'])
         templates = command['poem']['templates']
         for i in range(command['poem']['num']):
             print(templates[i])
-            workers.append(pool.apply_async(genClipByCommand,(3,templates[i])))
+            workers.append(pool.apply_async(genClipByCommand,(3,templates[i],target_fps),error_callback=error_handler))
     
-
     print("结尾生成")
-    print(command['ending'])
-    workers.append(pool.apply_async(genClipByCommand,(5,command['ending'])))
+    workers.append(pool.apply_async(genClipByCommand,(5,command['ending'],target_fps),error_callback=error_handler))
     
     pool.close()
-
-    #音乐
-    global multi_files
-    global music_clip
-
-    print("音乐预处理")
-    music_clip = AudioFileClip(command['music'])
 
     print("等待片段合成...")
     
     tmp_files = []
-    tmp_clips = []
     for i in workers:
         filename = i.get()
         if filename:
             tmp_files.append(filename)
-            print(filename)
-            print(tmp_files)
-            tmp_clips.append(VideoFileClip(filename).crossfadein(1))
+            print(filename,"片段完成")
+    print("所有片段",tmp_files)
 
     pool.join()
     
     #写文件
-    multi_files = tmp_files
     print("合成序列")
-    final_clip = concatenate(tmp_clips,padding=-1, method="compose")
-    audio_clip = afx.audio_loop( music_clip, duration=final_clip.duration)
-    final_clip = final_clip.set_audio(audio_clip)
-    final_clip.write_videofile(command['location'],fps=command['fps'])
-
+    # multi_files = tmp_files
+    if not concatClips(tmp_files,command['location'],command['music']):
+        raise Exception("合成序列失败")
+    
     #清理文件
     
     import os
     for i in tmp_files:
         if os.path.exists(i):
             os.remove(i)
-    return final_clip
+    return True
 
-def generateCompose():
-    global multi_files
-    tmp_clips = []
-    for i in multi_files:
-            tmp_clips.append(VideoFileClip(i).crossfadein(1))
-    final_clip = concatenate(tmp_clips,padding=-1, method="compose")
-    audio_clip = afx.audio_loop( music_clip, duration=final_clip.duration)
-    final_clip = final_clip.set_audio(audio_clip)
-    return final_clip
-
-def generateMovieMultithread(Incommand):
-    global command 
-    command = Incommand
-    multithread_write_videofile('multi.mp4',generateCompose,moviepy_threads=5,ffmpeg_threads=1,fps=5)
 

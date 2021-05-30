@@ -3,12 +3,13 @@ Description=TravelLog server deamon
 After=network.target
 
 [Service]
-User=www
+User=SERVICE_USER
 Type=simple
 KillMode=control-group
-ExecStart=bash /www/wwwroot/travel/scripts/start.sh /www/wwwroot/travel
-ExecReload=/www/wwwroot/travel/scripts/reload.sh  /www/wwwroot/travel
+ExecStart=bash BASE_DIR/scripts/start.sh BASE_DIR
+ExecReload=BASE_DIR/scripts/reload.sh BASE_DIR
 KillMode=control-group
+TimeoutStopSec=5
 
 [Install]
 WantedBy=multi-user.target

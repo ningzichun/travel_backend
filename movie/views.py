@@ -1,11 +1,10 @@
 from django.shortcuts import render
-from forum.models import Post,Comment
 from django.core.serializers import serialize
 from travel.codes import return200,return403,returnList
 from django.utils import timezone
 from datetime import datetime
 from user.models import User
-from movie.models import Work
+from movie.models import Work,WorkComment
 from movie import tasks
 
 from django.core.cache import cache
@@ -39,15 +38,24 @@ def checkMissingInfo(wid,work_obj):  #检查完整性
         return("info.json 中无 title")
     if not "description" in load_dict:
         return("info.json 中无 description")
+    if not "share" in load_dict:
+        load_dict["share"] = True
+    elif load_dict["share"]:
+        load_dict["share"] = True
+    else :
+        load_dict["share"] = False
+    if not "tag" in load_dict:
+        load_dict["tag"] = 1
     work_obj.movie_title = load_dict["title"]
     work_obj.movie_description = load_dict["description"]
+    work_obj.share_tag = load_dict["share"]
+    work_obj.tag = int(load_dict["tag"])
     work_obj.save()
     images_in_json = list(load_dict["images"])
-    print(images_in_json)
-    print(files_in_dir)
     for i in images_in_json:
         if i not in files_in_dir:
             return("缺少文件："+i)
+    print("合法性检测通过")
     return False
 
 def newWork(request):   #新建作业集
@@ -100,6 +108,7 @@ def startWork(request,wid): #开始生成影集
     work_obj = Work.objects.filter(uid = uid,work_id=wid).first()
     if not work_obj:
         return return403('找不到作业集')
+    print("请求生成影集")
     img_path = "./media/movies/"+str(wid)
     if not os.path.exists(img_path):    #找不到目录，已过期
         work_obj.status = -2
@@ -132,7 +141,9 @@ def startWork(request,wid): #开始生成影集
         return return403(hasMissingInfo)
     work_obj.status = 100
     work_obj.status_msg = ret_desc
+    print("准备分配作业")
     newTask = tasks.makeMovie.delay(wid,uid)
+    print("分配作业",newTask.task_id)
     work_obj.result_msg = newTask.task_id
     work_obj.save()
     return return200(ret_msg)
@@ -195,13 +206,6 @@ def getStatus(request,wid): #获取当前状态
     }
     return returnList(return_data)
 
-
-def getMovie(request,wid):  #获取生成得到的影集
-    return_data = {
-        'msg' : ""
-    }
-    return returnList(return_data)
-
 def deleteMovie(request,wid):
     uid = request.session.get('uid',None)
     if not uid:
@@ -251,6 +255,9 @@ def myMovieList(request):
             'status' : i.status,
             'status_msg' : i.status_msg,
             'result_msg' : i.result_msg,
+            'tag' : i.tag,
+            'like_num' : i.like_num,
+            'comment_num' : i.comment_num,
         })
     
     return returnList(return_data)
@@ -278,12 +285,15 @@ def myMovieListAll(request):
             'status' : i.status,
             'status_msg' : i.status_msg,
             'result_msg' : i.result_msg,
+            'tag' : i.tag,
+            'like_num' : i.like_num,
+            'comment_num' : i.comment_num,
         })
     
     return returnList(return_data)
 
 def movieListAll(request):
-    work_obj = Work.objects.filter()
+    work_obj = Work.objects.filter(share_tag = True,status__gt=150)
 
     return_data = {
         'movie_num' : work_obj.count(),
@@ -304,46 +314,126 @@ def movieListAll(request):
             'status' : i.status,
             'status_msg' : i.status_msg,
             'result_msg' : i.result_msg,
+            'tag' : i.tag,
+            'like_num' : i.like_num,
+            'comment_num' : i.comment_num,
         })
     
     return returnList(return_data)
 
-def shareMovie(request,wid):
-    uid = request.session.get('uid',None)
+def movieListTag(request,tag):
+    work_obj = Work.objects.filter(share_tag = True,status__gt=150,tag = tag)
+
+    return_data = {
+        'movie_num' : work_obj.count(),
+        'movies' : []
+    }
+
+    for i in work_obj:
+        return_data['movies'].append({
+            'work_id': i.work_id,
+            'uid' : i.uid.uid,
+            'uname' : i.uid.uname,
+            'avatar' : '/media/'+i.uid.avatar.name,
+            'movie_title' : i.movie_title,
+            'movie_description' : i.movie_description,
+            'movie_cover' : i.movie_cover,
+            'create_time' : i.create_time.strftime('%Y-%m-%d %H:%M:%S'),
+            'update_time' : i.update_time.strftime('%Y-%m-%d %H:%M:%S'),
+            'status' : i.status,
+            'status_msg' : i.status_msg,
+            'result_msg' : i.result_msg,
+            'tag' : i.tag,
+            'like_num' : i.like_num,
+            'comment_num' : i.comment_num,
+        })
+    
+    return returnList(return_data)
+
+def likeMovie(request,wid):
+    uid=request.session.get('uid',None)
     if not uid:
         return return403('未登录或登录超时')
-    work_obj = Work.objects.filter(uid = uid,work_id=wid).first()
+    work_obj = Work.objects.filter(work_id=wid).first()
     if not work_obj:
-        return return403('找不到作业集')
-    if work_obj.status!=200:
-        return return403('成功生成的影集才可分享')
-    title = work_obj.movie_title
-    text =  work_obj.movie_description
-    cover = work_obj.movie_cover
-    movie_info={
-        'work_id': work_obj.work_id,
-        'movie_title' : work_obj.movie_title,
-        'movie_description' : work_obj.movie_description,
-        'movie_cover' : work_obj.movie_cover,
-        'create_time' : work_obj.create_time.strftime('%Y-%m-%d %H:%M:%S'),
-        'update_time' : work_obj.update_time.strftime('%Y-%m-%d %H:%M:%S'),
-        'status' : work_obj.status,
-        'status_msg' : work_obj.status_msg,
-        'result_msg' : work_obj.result_msg,
-    }
-    post_type = 2
-    uid_obj=User.objects.filter(uid=uid).first()
-    movie_info_str = json.dumps(movie_info)
-    post_obj=Post(uid=uid_obj,title=title,post_type=post_type,text=text,time=datetime.now(),cover=cover,reference=movie_info_str)
-    post_obj.save()
-    return return200("分享成功")
+        return return403('找不到影集')
+    
+    cached = cache.get(str(uid)+'work'+str(wid))
+    if cached:
+        return return403('已经点过赞啦~')
+    
+    work_obj.like_num = work_obj.like_num + 1
+    work_obj.save()
+    cache.set(str(uid)+'work'+str(wid), 1, 3600)
+    return return200('操作成功')
 
-def shareFunc(uid,movie_info):
-    title = movie_info["movie_title"]
-    text =  movie_info["movie_description"]
-    cover = movie_info["movie_cover"]
-    post_type = 2
-    uid_obj=User.objects.filter(uid=uid).first()
-    movie_info_str = json.dumps(movie_info)
-    post_obj=Post(uid=uid_obj,title=title,post_type=post_type,text=text,time=datetime.now(),cover=cover,reference=movie_info_str)
-    post_obj.save()
+
+def getComment(request,wid):
+    work_obj = Work.objects.filter(work_id = wid)
+    if not work_obj:
+        return403("找不到影集")
+
+    comments = WorkComment.objects.filter(work=work_obj)
+    return_data = {
+        'comment_num' : comments.count(),
+        'comments' : []
+    }
+    for i in comments:
+        return_data['comments'].append({
+            'comment_id': i.comment_id,
+            'uid' : i.uid.uid,
+            'uname' : i.uid.uname,
+            'gender' : i.uid.gender,
+            'avatar' : '/media/'+i.uid.avatar.name,
+            'text' : i.text,
+            'time' : i.time.strftime("%Y-%m-%d %H:%M:%S"),
+            'like_num' : i.like_num,
+        })
+    return returnList(return_data)
+
+
+def newComment(request,wid):
+    uid=request.session.get('uid',None)
+    if not uid:
+        return return403('未登录或登录超时')
+    wid = int(wid)
+    text = request.POST.get("text")
+    if not text:
+        return return403('参数无效')
+    uid_obj = User.objects.filter(uid=uid).first()
+    work_obj = Work.objects.filter(work_id=wid).first()
+    if not work_obj:
+        return return403('找不到影集')
+    comment_obj = WorkComment(uid=uid_obj,work=work_obj, text=text,time=timezone.now())
+    comment_obj.save()
+    return return200('操作成功')
+
+
+def likeComment(request,cid):
+    uid=request.session.get('uid',None)
+    if not uid:
+        return return403('未登录或登录超时')
+    comment_obj = WorkComment.objects.filter(comment_id=cid).first()
+    if not comment_obj:
+        return return403('找不到评论')
+    
+    cached = cache.get(str(uid)+'mcom'+str(cid))
+    if cached:
+        return return403('已经点过赞啦~')
+    
+    comment_obj.like_num = comment_obj.like_num + 1
+    comment_obj.save()
+
+    cache.set(str(uid)+'mcom'+str(cid), 1, 3600)
+    return return200('操作成功')
+
+def deleteComment(request,cid):
+    uid=request.session.get('uid',None)
+    if not uid:
+        return return403('未登录或登录超时')
+    comment_obj = WorkComment.objects.filter(comment_id=cid,uid=uid).first()
+    if not comment_obj:
+        return return403('找不到评论')
+    comment_obj.delete()
+    return return200('操作成功')
+

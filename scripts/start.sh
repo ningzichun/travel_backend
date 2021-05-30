@@ -8,6 +8,6 @@ fi
 cd $dir
 rm ./media/log.txt &
 rm ./media/celery.txt &
-/usr/bin/python3 manage.py runserver 0.0.0.0:8000 &
-celery -A travel worker -c 2 -l INFO -f ./media/celery.txt &
+uwsgi --ini ./uwsgi.ini &
+celery -A travel worker -P threads -c 3 -l INFO -f ./media/celery.txt &
 wait

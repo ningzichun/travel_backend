@@ -3,21 +3,23 @@
 
 import json
 from shapely.geometry import shape, Point
+from travel.resources.postcode import code2img
 
 _geojson_data = {}
+image_path = "/static/city/"
 
 # 经纬度坐标地址解析，返回行政区划
-def coordinate2address(latitude, longitude):
-
-    point = Point(latitude, longitude)
+def coordinate2address(longitude,latitude):
+    point = Point(longitude, latitude)
     address = {
         'province': "",
         'city': "",
-        'county': ""
+        'county': "",
+        'image': code2img("00") 
     }
 
     _dfs('china', point, address)
-
+    address['image'] = image_path + address['image']
     return address
 
 
@@ -33,8 +35,6 @@ def _dfs(id_, point, result={}):
             map_file_str = './travel/resources/mapdata/geometryCouties/%s00.json' % id_
         else:
             return
-
-        print(map_file_str)
 
         try:
             with open(map_file_str, encoding='UTF-8-SIG') as f:
@@ -59,12 +59,32 @@ def _dfs(id_, point, result={}):
                 level = 'county'
             else:
                 return
-
+            
             result[level] = name
+
+            img_path = code2img(id_)
+            if img_path:
+                result['image'] = img_path
 
             _dfs(id_, point, result)
 
             return
+
+# 返回城市印象图
+def coordinate2image(latitude, longitude):
+    if ((latitude==None) or (longitude==None)):
+        return '.' + image_path+code2img("00")
+    address = coordinate2address(float(longitude),float(latitude))
+    return "." + address['image']
+
+def emptydict():
+    address = {
+        'province': "",
+        'city': "",
+        'county': "",
+        'image': image_path + code2img("00") 
+    }
+    return address
 
 
 if __name__ == '__main__':

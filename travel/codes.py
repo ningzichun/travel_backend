@@ -22,8 +22,8 @@ def returnList(list):
 
 def sendMail(target_addr,title,content):
     smtp_server = 'smtp.exmail.qq.com'
-    from_addr = 'send@mrning.com'
-    password = 'zsMM2!'
+    from_addr = 'travel@mrning.com'
+    password = 'cL8kAvy9tGJSwyPN'
     msg = MIMEText(content, 'html', 'utf-8')
     msg['From']=formataddr(["TravelLog",from_addr])
     msg['To']=formataddr(["User",target_addr]) 
